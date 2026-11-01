@@ -336,9 +336,10 @@ nav.tabs .fab svg{width:28px;height:28px}
       <p class="small muted" style="margin:0">Registre o que entrou sujo e o que saiu depois de limpo. O app calcula a perda e o rendimento.</p>
       <div class="g3">
         <div class="f"><label for="fEnt">Entrou sujo</label><input id="fEnt" list="dlMateriais" placeholder="Ex.: Induzido com ferro"></div>
-        <div class="f"><label for="fEntQ">Peso (kg)</label><input id="fEntQ" type="number" inputmode="decimal" step="any" min="0" placeholder="0"></div>
-        <div class="f"><label>&nbsp;</label><span class="small muted" style="padding:12px 0">kg</span></div>
+        <div class="f"><label for="fEntQ" id="lEntQ">Peso (kg)</label><input id="fEntQ" type="number" inputmode="decimal" step="any" min="0" placeholder="0"></div>
+        <div class="f"><label for="fEntUn">Unid.</label><select id="fEntUn"><option value="kg">kg</option><option value="pç">peça</option></select></div>
       </div>
+      <div class="f" id="boxEntPeso" hidden><label for="fEntPeso">Peso total das peças (kg) — opcional, para calcular a perda</label><input id="fEntPeso" type="number" inputmode="decimal" step="any" min="0" placeholder="Ex.: 1250"></div>
       <div class="f"><label>Saiu limpo</label></div>
       <div id="saidas" style="display:flex;flex-direction:column;gap:8px"></div>
       <div class="chips" id="saiChips"><button type="button" data-n="Cobre">+ Cobre</button><button type="button" data-n="Ferro">+ Ferro</button><button type="button" data-n="Alumínio">+ Alumínio</button><button type="button" data-n="Latão">+ Latão</button><button type="button" data-n="Plástico">+ Plástico</button><button type="button" data-n="">+ Outro</button></div>
@@ -371,7 +372,7 @@ const N=(v,d=1)=>(+v||0).toLocaleString('pt-BR',{maximumFractionDigits:d});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const MESC=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-const MAT_BASE=['Motor de geladeira (cobre)','Motor de geladeira (alumínio)','Motor grande','Compressor scroll','Motor de tanquinho','Alternador','Motor de partida','Bloco limpo','Bloco misto','Bateria','Fio misto','Fio de instalação','Garimpo de cobre','Cobre','Alumínio','Ferro','Ar-condicionado (aparelho)','Induzido com ferro','Latão','Plástico'];
+const MAT_BASE=['Motor de geladeira (cobre)','Motor de geladeira (alumínio)','Motor grande','Compressor scroll','Motor de tanquinho','Alternador','Motor de partida','Bloco limpo','Bloco misto','Bateria','Fio misto','Fio de instalação','Garimpo de cobre','Cobre','Alumínio','Ferro','Ar-condicionado (aparelho)','Induzido com ferro','Latão','Plástico','Motor (inteiro)'];
 const pad=n=>String(n).padStart(2,'0');
 const today=new Date(); const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const key=(y,m)=>y+'-'+pad(m+1);
@@ -412,21 +413,23 @@ function addSaida(n,q){const d=document.createElement('div');d.className='sai';
   d.querySelector('button').addEventListener('click',()=>{d.remove();calcTotal();});d.querySelector('.sQ').addEventListener('input',calcTotal);
   $('#saidas').appendChild(d);if(!n)d.querySelector('.sN').focus();return d;}
 $$('#saiChips button').forEach(b=>b.addEventListener('click',()=>{const d=addSaida(b.dataset.n);if(b.dataset.n)d.querySelector('.sQ').focus();}));
-['#fEntQ','#fCusto'].forEach(id=>$(id).addEventListener('input',()=>calcTotal()));
+['#fEntQ','#fCusto','#fEntPeso'].forEach(id=>$(id).addEventListener('input',()=>calcTotal()));
+$('#fEntUn').addEventListener('change',()=>{const pc=$('#fEntUn').value==='pç';$('#boxEntPeso').hidden=!pc;$('#lEntQ').textContent=pc?'Quantas peças':'Peso (kg)';calcTotal();});
+const entPeso=()=>$('#fEntUn').value==='kg'?num('#fEntQ'):num('#fEntPeso');
 const saidasVal=()=>$$('#saidas .sai').map(d=>({material:d.querySelector('.sN').value.trim(),qtd:parseFloat(String(d.querySelector('.sQ').value).replace(',','.'))||0,unidade:'kg'})).filter(x=>x.material&&x.qtd>0);
 $$('.typeseg button').forEach(b=>b.addEventListener('click',()=>setTipo(b.dataset.tipo)));
 $('#fUn').addEventListener('change',()=>{$('#lPreco').textContent=$('#fUn').value==='kg'?'Preço por kg (R$)':'Preço por peça (R$)';calcTotal();});
 const num=id=>{const v=parseFloat(String($(id).value).replace(',','.'));return isFinite(v)?v:0;};
 function calcTotal(){
-  if(tipo==='processo'){const ent=num('#fEntQ'),sai=saidasVal().reduce((a,x)=>a+x.qtd,0),pd=ent-sai;
-    const el=$('#pPerda');el.textContent=ent?N(pd)+' kg ('+N(pd/ent*100,1)+'%)':'0 kg';el.className='num '+(pd<0?'neg':'');
+  if(tipo==='processo'){const ent=entPeso(),sai=saidasVal().reduce((a,x)=>a+x.qtd,0),pd=ent-sai,qn=num('#fEntQ'),pc=$('#fEntUn').value==='pç';
+    const el=$('#pPerda');el.textContent=ent?N(pd)+' kg ('+N(pd/ent*100,1)+'%)':(pc?(qn&&sai?N(sai/qn,2)+' kg limpo por peça':'informe o peso p/ ver'):'0 kg');el.className='num '+(pd<0&&ent?'neg':'');
     const t=num('#fCusto');$('#fTotal').textContent=BRL(t);procHint(ent,sai);return t;}
   const t=tipo==='gasto'?num('#fValor'):num('#fQtd')*num('#fPreco');$('#fTotal').textContent=BRL(t);hint();return t;}
-function procHint(ent,sai){const h=$('#fHint');h.textContent='';if(!ent||!sai)return;
-  if(sai>ent){h.innerHTML='<b class="neg">Saiu mais peso do que entrou.</b> Confira os pesos.';return;}
+function procHint(ent,sai){const h=$('#fHint');h.textContent='';const qn=num('#fEntQ'),un=$('#fEntUn').value;if(!qn||!sai)return;
+  if(ent&&sai>ent){h.innerHTML='<b class="neg">Saiu mais peso do que entrou.</b> Confira os pesos.';return;}
   const ms=matStats();let val=0,ok=true;saidasVal().forEach(x=>{const o=ms[x.material.toLowerCase()+'|kg'];if(o&&o.pv)val+=x.qtd*o.pv;else ok=false;});
-  const e=ms[$('#fEnt').value.trim().toLowerCase()+'|kg'];
-  if(val&&ok){h.innerHTML='O que saiu vale uns <b>'+BRL(val)+'</b> nos seus preços de venda'+(e&&e.pc?' (o sujo custou <b>'+BRL(ent*e.pc)+'</b>)':'')+' → cada kg sujo rendeu <b>'+BRL(val/ent)+'</b>.';}}
+  const e=ms[$('#fEnt').value.trim().toLowerCase()+'|'+un];
+  if(val&&ok){h.innerHTML='O que saiu vale uns <b>'+BRL(val)+'</b> nos seus preços de venda'+(e&&e.pc?' (o sujo custou <b>'+BRL(qn*e.pc)+'</b>)':'')+' → cada '+(un==='kg'?'kg':'peça')+' sujo rendeu <b>'+BRL(val/qn)+'</b>.';}}
 ['#fQtd','#fPreco','#fValor'].forEach(id=>$(id).addEventListener('input',calcTotal));
 $('#fMaterial').addEventListener('input',hint);
 function hint(){
@@ -440,7 +443,7 @@ function renderChips(){
   const c=$('#chips'); if(tipo==='gasto'){c.innerHTML='';return;}
   if(tipo==='processo'){const seen=new Map();rows.filter(r=>r.tipo==='processo'&&r.entrada).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||'')).forEach(r=>{if(!seen.has(r.entrada.material))seen.set(r.entrada.material,r);});
     const list=[...seen.values()].slice(0,6);c.innerHTML=list.map((r,i)=>`<button type="button" data-i="${i}">${esc(r.entrada.material)}</button>`).join('');
-    c.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{const r=list[+b.dataset.i];$('#fEnt').value=r.entrada.material;$('#saidas').innerHTML='';(r.saidas||[]).forEach(x=>addSaida(x.material));$('#fEntQ').focus();calcTotal();}));return;}
+    c.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{const r=list[+b.dataset.i];$('#fEnt').value=r.entrada.material;$('#fEntUn').value=r.entrada.unidade||'kg';$('#fEntUn').dispatchEvent(new Event('change'));$('#saidas').innerHTML='';(r.saidas||[]).forEach(x=>addSaida(x.material));$('#fEntQ').focus();calcTotal();}));return;}
   const seen=new Map(); rows.filter(r=>r.tipo===tipo&&r.material).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||'')).forEach(r=>{const k=r.material+'|'+(r.unidade||'kg');if(!seen.has(k))seen.set(k,r);});
   const list=[...seen.values()].slice(0,8);
   c.innerHTML=list.map((r,i)=>`<button type="button" data-i="${i}">${esc(r.material)}</button>`).join('');
@@ -452,11 +455,11 @@ $('#form').addEventListener('submit',async e=>{
   const total=calcTotal();
   const d={tipo,data:$('#fData').value,pessoa:$('#fPessoa').value.trim(),obs:$('#fObs').value.trim(),total:Math.round(total*100)/100,criadoEm:new Date().toISOString()};
   if(tipo==='gasto')d.categoria=$('#fCat').value;
-  else if(tipo==='processo'){d.entrada={material:$('#fEnt').value.trim(),qtd:num('#fEntQ'),unidade:'kg'};d.saidas=saidasVal();
-    if(!d.entrada.material||!d.entrada.qtd){msg.textContent='Informe o material sujo e o peso que entrou.';msg.className='status err';return;}
+  else if(tipo==='processo'){d.entrada={material:$('#fEnt').value.trim(),qtd:num('#fEntQ'),unidade:$('#fEntUn').value};if(d.entrada.unidade==='pç'&&num('#fEntPeso'))d.entrada.peso=num('#fEntPeso');d.saidas=saidasVal();const pesoE=d.entrada.unidade==='kg'?d.entrada.qtd:(d.entrada.peso||0);
+    if(!d.entrada.material||!d.entrada.qtd){msg.textContent='Informe o material sujo e quanto entrou.';msg.className='status err';return;}
     if(!d.saidas.length){msg.textContent='Informe pelo menos um material que saiu limpo, com o peso.';msg.className='status err';return;}
-    const sai=d.saidas.reduce((a,x)=>a+x.qtd,0);if(sai>d.entrada.qtd*1.02){msg.textContent='Saiu mais peso do que entrou. Confira os pesos.';msg.className='status err';return;}
-    d.perda=Math.round((d.entrada.qtd-sai)*100)/100;}
+    const sai=d.saidas.reduce((a,x)=>a+x.qtd,0);if(pesoE&&sai>pesoE*1.02){msg.textContent='Saiu mais peso do que entrou. Confira os pesos.';msg.className='status err';return;}
+    d.perda=pesoE?Math.round((pesoE-sai)*100)/100:null;}
   else{d.material=$('#fMaterial').value.trim();d.qtd=num('#fQtd');d.unidade=$('#fUn').value;d.preco=num('#fPreco');
     if(!d.material){msg.textContent='Informe o material.';msg.className='status err';return;}
     if(!d.qtd){msg.textContent='Informe a quantidade.';msg.className='status err';return;}}
@@ -465,8 +468,8 @@ $('#form').addEventListener('submit',async e=>{
   const btn=$('#btnSalvar');btn.disabled=true;msg.textContent='Salvando…';
   try{ col.add(d).catch(err=>toast('Erro ao salvar: '+(err.code||'')));  // grava offline também
     try{navigator.vibrate&&navigator.vibrate(30);}catch(_){}
-    toast(tipo==='processo'?'Limpeza salva: perda de '+N(d.perda)+' kg':(tipo==='compra'?'Compra':tipo==='venda'?'Venda':'Gasto')+' de '+BRL(d.total)+' salva');
-    ['#fQtd','#fPreco','#fValor','#fObs','#fEntQ','#fCusto'].forEach(i=>$(i).value='');$$('#saidas .sQ').forEach(x=>x.value='');calcTotal();closeSheet();
+    toast(tipo==='processo'?(d.perda!=null?'Limpeza salva: perda de '+N(d.perda)+' kg':'Limpeza salva'):(tipo==='compra'?'Compra':tipo==='venda'?'Venda':'Gasto')+' de '+BRL(d.total)+' salva');
+    ['#fQtd','#fPreco','#fValor','#fObs','#fEntQ','#fCusto','#fEntPeso'].forEach(i=>$(i).value='');$$('#saidas .sQ').forEach(x=>x.value='');calcTotal();closeSheet();
     const [y,m]=d.data.split('-').map(Number); if(y!==mY||m-1!==mM){mY=y;mM=m-1;}
   }catch(err){msg.className='status err';msg.textContent='Não deu para salvar ('+(err.code||'erro')+').';}
   finally{btn.disabled=false;}
@@ -480,17 +483,17 @@ function matStats(){const m={},rend={};
   rows.forEach(r=>{if(r.tipo==='compra'){const o=get(r.material,r.unidade);o.cq+=+r.qtd||0;o.cv+=+r.total||0;o.inQ+=+r.qtd||0;o.inV+=+r.total||0;}
     else if(r.tipo==='venda'){const o=get(r.material,r.unidade);o.vq+=+r.qtd||0;o.vv+=+r.total||0;}});
   rows.filter(r=>r.tipo==='processo'&&r.entrada).sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.criadoEm||'').localeCompare(b.criadoEm||'')).forEach(r=>{
-    const e=get(r.entrada.material,'kg'),q=+r.entrada.qtd||0,pcE=e.inQ?e.inV/e.inQ:0,custo=q*pcE+(+r.total||0);e.outQ+=q;
+    const eu=r.entrada.unidade||'kg',e=get(r.entrada.material,eu),q=+r.entrada.qtd||0,pesoE=eu==='kg'?q:(+r.entrada.peso||0),pcE=e.inQ?e.inV/e.inQ:0,custo=q*pcE+(+r.total||0);e.outQ+=q;
     const outs=(r.saidas||[]).map(x=>({o:get(x.material,'kg'),q:+x.qtd||0}));
     let W=outs.reduce((a,x)=>a+x.q*(x.o.vq?x.o.vv/x.o.vq:0),0);const byVal=W>0;if(!byVal)W=outs.reduce((a,x)=>a+x.q,0)||1;
     outs.forEach(x=>{const w=byVal?x.q*(x.o.vq?x.o.vv/x.o.vq:0):x.q;x.o.inQ+=x.q;x.o.inV+=custo*w/W;x.o.prodQ+=x.q;});
-    const R=rend[e.name.toLowerCase()]||(rend[e.name.toLowerCase()]={name:e.name,in:0,outs:{},n:0});R.in+=q;R.n++;outs.forEach(x=>{R.outs[x.o.name]=(R.outs[x.o.name]||0)+x.q;});});
+    const rk=e.name.toLowerCase()+'|'+eu,R=rend[rk]||(rend[rk]={name:e.name,un:eu,in:0,outs:{},n:0,peso:0,saiPeso:0});R.in+=q;R.n++;outs.forEach(x=>{R.outs[x.o.name]=(R.outs[x.o.name]||0)+x.q;});if(pesoE){R.peso+=pesoE;R.saiPeso+=outs.reduce((a,x)=>a+x.q,0);}});
   Object.values(m).forEach(o=>{o.pc=o.inQ?o.inV/o.inQ:0;o.pv=o.vq?o.vv/o.vq:0;o.est=Math.max(0,o.inQ-o.vq-o.outQ);o.parado=o.est*o.pc;});
   Object.defineProperty(m,'_rend',{value:rend,enumerable:false});return m;}
-function rendOf(ms,name){const R=ms._rend[(name||'').trim().toLowerCase()];if(!R||!R.in)return null;
+function rendOf(ms,name){name=(name||'').trim().toLowerCase();const R=ms._rend[name]||ms._rend[name+'|kg']||ms._rend[name+'|pç'];if(!R||!R.in)return null;
   const outs=Object.entries(R.outs).map(([n,q])=>{const o=ms[n.toLowerCase()+'|kg'];return {n,q,pct:q/R.in,pv:o&&o.pv||0};}).sort((a,b)=>b.q-a.q);
   const sai=outs.reduce((a,x)=>a+x.q,0);const valKg=outs.every(x=>x.pv)?outs.reduce((a,x)=>a+x.pct*x.pv,0):null;
-  return {name:R.name,in:R.in,n:R.n,outs,perda:(R.in-sai)/R.in,valKg};}
+  return {name:R.name,un:R.un,in:R.in,n:R.n,outs,perda:R.peso?(R.peso-R.saiPeso)/R.peso:null,pesoPc:R.un==='pç'&&R.peso?R.peso/R.in:null,valKg};}
 function lucroReal(rs,ms){ // vendas − custo médio do que foi vendido − gastos
   let v=0,c=0,g=0,semCusto=0;rs.forEach(r=>{const t=+r.total||0;if(r.tipo==='venda'){v+=t;const o=ms[(r.material||'—').trim().toLowerCase()+'|'+(r.unidade||'kg')];if(o&&o.pc)c+=(+r.qtd||0)*o.pc;else semCusto+=t;}else if(r.tipo==='gasto')g+=t;});
   return {valor:v-c-g,semCusto};}
@@ -602,7 +605,7 @@ function insights(rs,s,ps,ms,pr){
   const sup={};rs.filter(r=>r.tipo==='compra'&&r.pessoa).forEach(r=>{const k=(r.material||'').trim().toLowerCase()+'|'+(r.unidade||'kg');(sup[k]=sup[k]||{})[r.pessoa]=(sup[k][r.pessoa]||[]).concat(+r.preco||0);});
   for(const [k,p] of Object.entries(sup)){const avg=Object.entries(p).map(([n,a])=>[n,a.reduce((x,y)=>x+y,0)/a.length]);if(avg.length>1){avg.sort((a,b)=>b[1]-a[1]);const dif=avg[0][1]-avg[avg.length-1][1];if(dif>0){add('$','var(--blue)',`Em ${esc(ms[k]?ms[k].name:k.split('|')[0])}, você paga <b>${BRL(dif)}</b> a mais por ${k.split('|')[1]} para ${esc(avg[0][0])} do que para ${esc(avg[avg.length-1][0])}.`);break;}}}
   const rl=Object.keys(ms._rend).map(k=>rendOf(ms,k)).filter(Boolean).sort((a,b)=>b.in-a.in)[0];
-  if(rl&&rl.outs[0])add('♻','var(--blue)',`${esc(rl.name)} rende <b>${N(rl.outs[0].pct*100,0)}% de ${esc(rl.outs[0].n)}</b> e perde <b>${N(rl.perda*100,0)}%</b> na limpeza${rl.valKg?'. Cada kg sujo vale <b>'+BRL(rl.valKg)+'</b> depois de limpo':''}.`);
+  if(rl&&rl.outs[0])add('♻','var(--blue)',rl.un==='pç'?`Cada ${esc(rl.name)} rende <b>${N(rl.outs[0].pct,2)} kg de ${esc(rl.outs[0].n)}</b>${rl.outs[1]?' e '+N(rl.outs[1].pct,2)+' kg de '+esc(rl.outs[1].n):''}${rl.valKg?'. Cada peça vale <b>'+BRL(rl.valKg)+'</b> depois de limpa':''}.`:`${esc(rl.name)} rende <b>${N(rl.outs[0].pct*100,0)}% de ${esc(rl.outs[0].n)}</b>${rl.perda!=null?' e perde <b>'+N(rl.perda*100,0)+'%</b> na limpeza':''}${rl.valKg?'. Cada kg sujo vale <b>'+BRL(rl.valKg)+'</b> depois de limpo':''}.`);
   const gastoPct=s.venda?s.gasto/s.venda*100:0;if(gastoPct>15)add('%','var(--warn)',`Os gastos já comem <b>${N(gastoPct,0)}%</b> das vendas do mês.`);
   if(!out.length)add('i','var(--muted)','Lance mais compras e vendas para eu conseguir comparar e trazer dicas.');
   $('#insights').innerHTML=out.slice(0,5).join('');
@@ -612,7 +615,7 @@ function listInto(el,rs,delBtn){
   if(!rs.length){el.innerHTML='<div class="empty">Nada lançado '+(filtro!=='todos'&&delBtn?'desse tipo ':'')+'em '+MES[mM]+'. Toque no <b>+</b> para lançar.</div>';return;}
   el.innerHTML=rs.map(r=>{const d=(r.data||'').slice(8,10)+'/'+(r.data||'').slice(5,7);
     if(r.tipo==='processo'&&r.entrada){const sai=(r.saidas||[]).map(x=>N(x.qtd)+' kg '+esc(x.material)).join(', ');
-      return `<div class="item"><div class="dot processo">L</div><div style="min-width:0"><div class="t">Limpeza: ${esc(r.entrada.material)}</div><div class="s">${N(r.entrada.qtd)} kg → ${sai} · perda ${N(r.perda)} kg · ${d}</div></div><div class="r"><b>${r.total?'−'+BRL(r.total):N(r.entrada.qtd?(r.perda/r.entrada.qtd*100):0,0)+'%'}</b>${delBtn?`<button class="del" data-id="${esc(r._id)}">Apagar</button>`:''}</div></div>`;}
+      return `<div class="item"><div class="dot processo">L</div><div style="min-width:0"><div class="t">Limpeza: ${esc(r.entrada.material)}</div><div class="s">${N(r.entrada.qtd)} ${r.entrada.unidade==='pç'?'peças':'kg'} → ${sai}${r.perda!=null?' · perda '+N(r.perda)+' kg':''} · ${d}</div></div><div class="r"><b>${r.total?'−'+BRL(r.total):''}</b>${delBtn?`<button class="del" data-id="${esc(r._id)}">Apagar</button>`:''}</div></div>`;}
     const t=r.tipo==='gasto'?esc(r.categoria||'Gasto'):esc(r.material||'');
     const s=r.tipo==='gasto'?(r.pessoa?esc(r.pessoa)+' · ':'')+d:N(+r.qtd||0)+' '+esc(r.unidade||'kg')+' × '+BRL(+r.preco||0)+(r.pessoa?' · '+esc(r.pessoa):'')+' · '+d;
     return `<div class="item"><div class="dot ${r.tipo}">${r.tipo==='compra'?'C':r.tipo==='venda'?'V':'G'}</div><div style="min-width:0"><div class="t">${t}</div><div class="s">${s}${r.obs?' · '+esc(r.obs):''}</div></div><div class="r"><b class="${r.tipo==='venda'?'pos':''}">${r.tipo==='venda'?'+':'−'}${BRL(+r.total||0).replace('R$ ','R$ ')}</b>${delBtn?`<button class="del" data-id="${esc(r._id)}">Apagar</button>`:''}</div></div>`;}).join('');
@@ -624,10 +627,12 @@ $('#allList').addEventListener('click',async e=>{const b=e.target.closest('.del'
 
 function renderRend(ms){const list=Object.keys(ms._rend).map(k=>rendOf(ms,k)).filter(Boolean).sort((a,b)=>b.in-a.in);
   const cols=['var(--copper)','var(--muted)','var(--blue)','var(--warn)','var(--good)','#b48cf2'];
-  $('#rendBox').innerHTML=list.length?list.map(R=>`<div class="rend"><div class="row"><b style="font-size:16px">${esc(R.name)}</b><span class="small muted">${N(R.in)} kg limpos em ${R.n} ${R.n===1?'vez':'vezes'}</span></div>
-    <div class="stack">${R.outs.map((x,i)=>`<i style="width:${x.pct*100}%;background:${cols[i%cols.length]}" title="${esc(x.n)}"></i>`).join('')}<i style="width:${Math.max(0,R.perda)*100}%;background:var(--bad);opacity:.7" title="Perda"></i></div>
-    <div class="legend">${R.outs.map((x,i)=>`<span><i style="background:${cols[i%cols.length]}"></i>${esc(x.n)} <b class="num">${N(x.pct*100,1)}%</b></span>`).join('')}<span><i style="background:var(--bad)"></i>Perda <b class="num">${N(R.perda*100,1)}%</b></span></div>
-    ${R.valKg?`<span class="small">Cada kg sujo rende <b class="num">${BRL(R.valKg)}</b> em material limpo, nos seus preços de venda.</span>`:''}</div>`).join(''):'<div class="empty">Quando você registrar uma <b>Limpeza</b> (botão + → Limpeza), aqui aparece quanto cada material sujo rende de cobre, ferro etc. e quanto se perde.</div>';}
+  $('#rendBox').innerHTML=list.length?list.map(R=>{const pc=R.un==='pç';const base=pc?(R.pesoPc||R.outs.reduce((a,x)=>a+x.pct,0)):1;
+    return `<div class="rend"><div class="row"><b style="font-size:16px">${esc(R.name)}</b><span class="small muted">${N(R.in)} ${pc?'peças':'kg'} limp${pc?'as':'os'} em ${R.n} ${R.n===1?'vez':'vezes'}</span></div>
+    <div class="stack">${R.outs.map((x,i)=>`<i style="width:${x.pct/base*100}%;background:${cols[i%cols.length]}" title="${esc(x.n)}"></i>`).join('')}${R.perda!=null?`<i style="width:${Math.max(0,R.perda)*100}%;background:var(--bad);opacity:.7" title="Perda"></i>`:''}</div>
+    <div class="legend">${R.outs.map((x,i)=>`<span><i style="background:${cols[i%cols.length]}"></i>${esc(x.n)} <b class="num">${pc?N(x.pct,2)+' kg/peça':N(x.pct*100,1)+'%'}</b></span>`).join('')}${R.perda!=null?`<span><i style="background:var(--bad)"></i>Perda <b class="num">${N(R.perda*100,1)}%</b></span>`:''}</div>
+    ${pc&&R.pesoPc?`<span class="small muted">Cada peça pesa em média ${N(R.pesoPc,2)} kg.</span>`:''}
+    ${R.valKg?`<span class="small">Cada ${pc?'peça':'kg'} sujo rende <b class="num">${BRL(R.valKg)}</b> em material limpo, nos seus preços de venda.</span>`:''}</div>`;}).join(''):'<div class="empty">Quando você registrar uma <b>Limpeza</b> (botão + → Limpeza), aqui aparece quanto cada material sujo rende de cobre, ferro etc. e quanto se perde.</div>';}
 function renderMat(rs,ms){renderRend(ms);
   const all=Object.values(ms);$('#mParado').textContent=BRL(all.reduce((a,o)=>a+o.parado,0));
   const lm={};rs.filter(r=>r.tipo==='venda').forEach(r=>{const k=(r.material||'—').trim().toLowerCase()+'|'+(r.unidade||'kg');const o=ms[k];if(!o)return;lm[k]=(lm[k]||0)+(+r.qtd||0)*((+r.preco||0)-(o.pc||0));});
@@ -648,7 +653,7 @@ function calc(){
   else{$('#cLabel').textContent=q?'Lucro no lote':'Lucro por unidade';$('#cLucro').textContent=BRL((pv-max)*(q||1));}
   const h=$('#cHint');h.innerHTML='';
   if(of&&pv){const m=(pv-of)/of*100;h.innerHTML=of<=max?`O preço pedido dá <b class="pos">${N(m,0)}% de margem</b>. Pode fechar.`:`O preço pedido dá só <b class="neg">${N(m,0)}%</b>. Ofereça até <b>${BRL(max)}</b>.`;}
-  else if(R&&R.valKg)h.innerHTML=`Material sujo: depois de limpo, cada kg rende <b>${BRL(R.valKg)}</b> (perda de ${N(R.perda*100,0)}%). Use isso como "Vendo a".`+(o&&o.pc?` Você costuma pagar <b>${BRL(o.pc)}</b>.`:'');
+  else if(R&&R.valKg)h.innerHTML=`Material sujo: depois de limpo, cada ${R.un==='pç'?'peça':'kg'} rende <b>${BRL(R.valKg)}</b>${R.perda!=null?' (perda de '+N(R.perda*100,0)+'%)':''}. Use isso como "Vendo a".`+(o&&o.pc?` Você costuma pagar <b>${BRL(o.pc)}</b>.`:'');
   else if(o&&o.pc)h.innerHTML=`Você costuma pagar <b>${BRL(o.pc)}</b> nesse material.`;
 }
 ['#cVenda','#cMargem','#cQtd','#cOferta'].forEach(i=>$(i).addEventListener('input',calc));
