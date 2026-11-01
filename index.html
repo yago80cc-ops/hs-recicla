@@ -59,7 +59,10 @@ body.privado .wrap .big,body.privado .wrap .kpi .v,body.privado .wrap .num,body.
 .editbar{background:color-mix(in srgb,var(--blue) 18%,transparent);color:var(--blue);border-radius:12px;padding:8px 12px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
 #fotoView{position:fixed;inset:0;z-index:85;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:10px}
 #fotoView img{max-width:100%;max-height:80vh;border-radius:10px}
-body.staff .owner-only{display:none!important}
+body.staff .owner-only,body.staff #eye,body.staff .month,body.staff #status{display:none!important}
+body.staff #fHint{display:none!important}
+body.staff nav.tabs{display:flex;justify-content:center}
+body.staff .brand b::after{content:' · lançamentos';font-size:.7em;color:var(--muted)}
 /* recibo */
 #recibo{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.6);display:flex;flex-direction:column;align-items:center;overflow:auto;padding:16px max(12px,env(safe-area-inset-left,0px)) calc(16px + env(safe-area-inset-bottom,0px))}
 #recibo .acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0 12px;width:100%;max-width:420px}
@@ -836,6 +839,7 @@ function insights(rs,s,ps,ms,pr){
 }
 
 function listInto(el,rs,delBtn){
+  if(!rs.length&&el.dataset.staff){el.innerHTML='<div class="empty">Você ainda não lançou nada hoje. Toque no <b>+</b> para lançar.</div>';return;}
   if(!rs.length){el.innerHTML='<div class="empty">Nada lançado '+(filtro!=='todos'&&delBtn?'desse tipo ':'')+'em '+MES[mM]+'. Toque no <b>+</b> para lançar.</div>';return;}
   el.innerHTML=rs.map(r=>{const d=(r.data||'').slice(8,10)+'/'+(r.data||'').slice(5,7);
     if(r.tipo==='processo'&&r.entrada){const sai=(r.saidas||[]).map(x=>N(x.qtd)+' kg '+esc(x.material)).join(', ');
@@ -996,7 +1000,7 @@ function renderEquipe(){const em=cfg.equipe.emails||[];$('#eqList').innerHTML=em
 $('#eqAdd').addEventListener('click',async()=>{const e=$('#eqEmail').value.trim().toLowerCase();if(!/^\S+@\S+\.\S+$/.test(e)){toast('E-mail inválido');return;}if(!cfgCol)return;
   try{await cfgCol.doc('equipe').set({emails:firebase.firestore.FieldValue.arrayUnion(e)},{merge:true});$('#eqEmail').value='';toast('Acesso liberado para '+e);}catch(err){toast('Não deu para salvar');}});
 $('#eqList').addEventListener('click',async e=>{const b=e.target.closest('[data-rm]');if(!b||!cfgCol)return;try{await cfgCol.doc('equipe').set({emails:firebase.firestore.FieldValue.arrayRemove(b.dataset.rm)},{merge:true});toast('Acesso retirado');}catch(err){toast('Não deu para salvar');}});
-function renderStaff(){const me=auth&&auth.currentUser?auth.currentUser.email:'';listInto($('#staffList'),rows.filter(r=>r.data===ymd(today)&&(!r.por||r.por===me)&&r.tipo!=='mov').sort(sortDesc),false);}
+function renderStaff(){const me=auth&&auth.currentUser?auth.currentUser.email:'';$('#staffList').dataset.staff='1';listInto($('#staffList'),rows.filter(r=>r.data===ymd(today)&&r.por===me&&r.tipo!=='mov').sort(sortDesc),false);}
 
 /* ---------- relatório do contador ---------- */
 function repRows(){return monthRows(mY,mM).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));}
