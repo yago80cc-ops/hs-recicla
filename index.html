@@ -200,11 +200,14 @@ nav.tabs .fab svg{width:28px;height:28px}
 .sheet.open{transform:none;visibility:visible;transition:transform .25s ease}
 .sheet .grab{width:42px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
 .sheet .inner{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
-.typeseg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--panel2);border-radius:14px;padding:4px}
+.typeseg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:var(--panel2);border-radius:14px;padding:4px}
 .typeseg button{border:none;background:none;font-family:var(--f-display);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:9px;border-radius:11px;color:var(--muted)}
 .typeseg button[aria-pressed="true"][data-tipo="compra"]{background:var(--buy);color:#1f1000}
 .typeseg button[aria-pressed="true"][data-tipo="venda"]{background:var(--good);color:#06180e}
 .typeseg button[aria-pressed="true"][data-tipo="gasto"]{background:var(--warn);color:#211500}
+.typeseg button[aria-pressed="true"][data-tipo="estoque"]{background:#b48cf2;color:#160a2a}
+.dot.estoque{background:color-mix(in srgb,#b48cf2 18%,transparent);color:#b48cf2}
+@media (max-width:480px){.typeseg button{font-size:13.5px;padding:9px 2px;letter-spacing:.02em}}
 .typeseg button[aria-pressed="true"][data-tipo="processo"]{background:var(--blue);color:#06142a}
 .dot.processo{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
 .sai{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:8px;align-items:end}
@@ -340,7 +343,7 @@ nav.tabs .fab svg{width:28px;height:28px}
   <!-- MATERIAIS -->
   <section class="view" id="v-materiais" hidden>
     <div class="hero" style="grid-template-columns:minmax(0,1fr)">
-      <div style="display:flex;flex-direction:column;gap:6px"><span class="lbl">Material parado no pátio</span><span class="big" id="mParado">R$ 0,00</span><span class="small muted">Tudo que entrou e ainda não saiu, ao preço médio que você pagou.</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><span class="lbl">Material parado no pátio</span><span class="big" id="mParado">R$ 0,00</span><span class="small muted">Tudo que entrou e ainda não saiu, ao preço médio que você pagou.</span><div class="seg"><button type="button" id="btnEstAdd" class="btn-main" style="padding:10px 16px;font-size:15px">+ Colocar material no estoque</button></div></div>
     </div>
     <div class="card col-a">
       <h2>Calculadora de negociação</h2>
@@ -357,6 +360,7 @@ nav.tabs .fab svg{width:28px;height:28px}
     </div>
     <div class="card col-b"><h2>Rendimento da limpeza</h2><div id="rendBox" style="display:flex;flex-direction:column;gap:10px"></div></div>
     <div class="card"><div class="row"><h2>Quem mais dá lucro</h2><span class="small muted">no mês</span></div><div id="rankMat" style="display:flex;flex-direction:column;gap:10px"></div></div>
+    <div class="card"><div class="row"><h2>Estoque no pátio</h2><span class="small muted">quantidade hoje</span></div><div id="estTab" class="list"></div></div>
     <div class="card"><h2>Ficha de cada material</h2><div class="matgrid" id="matCards"></div></div>
   </section>
 
@@ -481,12 +485,15 @@ nav.tabs .fab svg{width:28px;height:28px}
       <button type="button" data-tipo="venda" aria-pressed="false">Venda</button>
       <button type="button" data-tipo="gasto" aria-pressed="false">Gasto</button>
       <button type="button" data-tipo="processo" aria-pressed="false">Limpeza</button>
+      <button type="button" data-tipo="estoque" aria-pressed="false">Estoque</button>
     </div>
     <div class="chips" id="chips"></div>
     <div class="g2">
       <div class="f"><label for="fData">Data</label><input id="fData" type="date" required></div>
       <div class="f"><label for="fPessoa" id="lPessoa">Fornecedor</label><input id="fPessoa" list="dlPessoas" placeholder="Ex.: Leandro"></div>
     </div>
+    <div id="boxEst" class="f" hidden><label for="fEstSub">O que vai fazer</label><select id="fEstSub"><option value="entrada">Colocar material no estoque</option><option value="saida">Tirar do estoque (acerto, perda, uso)</option></select>
+      <p class="small muted" style="margin:4px 0 0">Para material que já está no pátio e não foi lançado como compra (estoque inicial, sobra, acerto de pesagem). Não mexe no caixa nem no lucro.</p></div>
     <div id="boxMaterial" class="g3">
       <div class="f"><label for="fMaterial">Material</label><input id="fMaterial" list="dlMateriais" placeholder="Ex.: Motor de geladeira"></div>
       <div class="f"><label for="fQtd">Quantidade</label><input id="fQtd" type="number" inputmode="decimal" step="any" min="0" placeholder="0"></div>
@@ -624,10 +631,10 @@ $('#fab').addEventListener('click',()=>openSheet());$('#editCancel').addEventLis
 $('#fPago').addEventListener('change',()=>{$('#boxVenc').hidden=$('#fPago').value==='1';}); $('#sheetBg').addEventListener('click',closeSheet);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();});
 function setTipo(t){tipo=t;$$('.typeseg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tipo===t));
-  const g=t==='gasto',pr=t==='processo'; $('#boxMaterial').hidden=g||pr;$('#boxPreco').hidden=g||pr;$('#boxCategoria').hidden=!g;$('#boxValor').hidden=!g;$('#boxProc').hidden=!pr;$('#boxPag').hidden=pr;$('#lForma').textContent=t==='venda'?'Recebido em':'Pago em';
-  $('#lPessoa').textContent=t==='compra'?'Fornecedor':t==='venda'?'Comprador':pr?'Quem limpou (opcional)':'Pago a';
-  $('#fPessoa').placeholder=t==='compra'?'Ex.: Leandro':t==='venda'?'Ex.: Reciclagem Capixaba':pr?'Ex.: Equipe':'Ex.: Posto';
-  $('#btnSalvar').textContent='Salvar '+(pr?'limpeza':t); if(pr&&!$('#saidas').children.length){addSaida('Cobre');addSaida('Ferro');} renderChips(); calcTotal();}
+  const g=t==='gasto',pr=t==='processo',es=t==='estoque'; $('#boxMaterial').hidden=g||pr;$('#boxPreco').hidden=g||pr;$('#boxEst').hidden=!es;$('#lPreco').textContent=es?'Valor de custo por '+($('#fUn').value==='kg'?'kg':'peça')+' (opcional)':($('#fUn').value==='kg'?'Preço por kg (R$)':'Preço por peça (R$)');$('#boxCategoria').hidden=!g;$('#boxValor').hidden=!g;$('#boxProc').hidden=!pr;$('#boxPag').hidden=pr||es;$('#lForma').textContent=t==='venda'?'Recebido em':'Pago em';
+  $('#lPessoa').textContent=t==='compra'?'Fornecedor':t==='venda'?'Comprador':pr?'Quem limpou (opcional)':es?'Origem (opcional)':'Pago a';
+  $('#fPessoa').placeholder=t==='compra'?'Ex.: Leandro':t==='venda'?'Ex.: Reciclagem Capixaba':pr?'Ex.: Equipe':es?'Ex.: estoque inicial':'Ex.: Posto';
+  $('#btnSalvar').textContent=es?'Salvar no estoque':'Salvar '+(pr?'limpeza':t); if(pr&&!$('#saidas').children.length){addSaida('Cobre');addSaida('Ferro');} renderChips(); calcTotal();}
 function addSaida(n,q){const d=document.createElement('div');d.className='sai';
   d.innerHTML='<div class="f"><input class="sN" list="dlMateriais" placeholder="Material limpo" value="'+esc(n||'')+'"></div><div class="f"><input class="sQ" type="number" inputmode="decimal" step="any" min="0" placeholder="kg" value="'+(q||'')+'"></div><button type="button" aria-label="Remover">✕</button>';
   d.querySelector('button').addEventListener('click',()=>{d.remove();calcTotal();});d.querySelector('.sQ').addEventListener('input',calcTotal);
@@ -638,7 +645,7 @@ $('#fEntUn').addEventListener('change',()=>{const pc=$('#fEntUn').value==='pç';
 const entPeso=()=>$('#fEntUn').value==='kg'?num('#fEntQ'):num('#fEntPeso');
 const saidasVal=()=>$$('#saidas .sai').map(d=>({material:d.querySelector('.sN').value.trim(),qtd:parseFloat(String(d.querySelector('.sQ').value).replace(',','.'))||0,unidade:'kg'})).filter(x=>x.material&&x.qtd>0);
 $$('.typeseg button').forEach(b=>b.addEventListener('click',()=>setTipo(b.dataset.tipo)));
-$('#fUn').addEventListener('change',()=>{$('#lPreco').textContent=$('#fUn').value==='kg'?'Preço por kg (R$)':'Preço por peça (R$)';calcTotal();});
+$('#fUn').addEventListener('change',()=>{const u=$('#fUn').value==='kg'?'kg':'peça';$('#lPreco').textContent=tipo==='estoque'?'Valor de custo por '+u+' (opcional)':'Preço por '+u+' (R$)';calcTotal();});
 const num=id=>{const v=parseFloat(String($(id).value).replace(',','.'));return isFinite(v)?v:0;};
 function calcTotal(){
   if(tipo==='processo'){const ent=entPeso(),sai=saidasVal().reduce((a,x)=>a+x.qtd,0),pd=ent-sai,qn=num('#fEntQ'),pc=$('#fEntUn').value==='pç';
@@ -674,7 +681,8 @@ $('#form').addEventListener('submit',async e=>{
   if(!col){msg.textContent='Ainda conectando. Tente de novo em instantes.';msg.className='status err';return;}
   const total=calcTotal();
   const d={tipo,data:$('#fData').value,pessoa:$('#fPessoa').value.trim(),obs:$('#fObs').value.trim(),total:Math.round(total*100)/100,criadoEm:new Date().toISOString()};
-  if(tipo!=='processo'){d.forma=$('#fForma').value;d.pago=$('#fPago').value==='1';if(!d.pago&&$('#fVenc').value)d.venc=$('#fVenc').value;}
+  if(tipo==='estoque')d.sub=$('#fEstSub').value;
+  if(tipo!=='processo'&&tipo!=='estoque'){d.forma=$('#fForma').value;d.pago=$('#fPago').value==='1';if(!d.pago&&$('#fVenc').value)d.venc=$('#fVenc').value;}
   if(tipo==='gasto')d.categoria=$('#fCat').value;
   else if(tipo==='processo'){d.entrada={material:$('#fEnt').value.trim(),qtd:num('#fEntQ'),unidade:$('#fEntUn').value};if(d.entrada.unidade==='pç'&&num('#fEntPeso'))d.entrada.peso=num('#fEntPeso');d.saidas=saidasVal();const pesoE=d.entrada.unidade==='kg'?d.entrada.qtd:(d.entrada.peso||0);
     if(!d.entrada.material||!d.entrada.qtd){msg.textContent='Informe o material sujo e quanto entrou.';msg.className='status err';return;}
@@ -685,7 +693,7 @@ $('#form').addEventListener('submit',async e=>{
     if(!d.material){msg.textContent='Informe o material.';msg.className='status err';return;}
     if(!d.qtd){msg.textContent='Informe a quantidade.';msg.className='status err';return;}}
   if(!d.data){msg.textContent='Escolha a data.';msg.className='status err';return;}
-  if(tipo!=='processo'&&!(d.total>0)){msg.textContent='O total está zerado. Confira quantidade e preço.';msg.className='status err';return;}
+  if(tipo!=='processo'&&tipo!=='estoque'&&!(d.total>0)){msg.textContent='O total está zerado. Confira quantidade e preço.';msg.className='status err';return;}
   const btn=$('#btnSalvar');btn.disabled=true;msg.textContent='Salvando…';
   try{ const ed=editing;if(ed){d.criadoEm=ed.criadoEm||d.criadoEm;d.editadoEm=new Date().toISOString();if(ed.foto)d.foto=true;if(ed.pagoEm&&d.pago)d.pagoEm=ed.pagoEm;if(ed.por)d.por=ed.por;}else if(!isOwner&&auth.currentUser)d.por=auth.currentUser.email;
     if(fotoData)d.foto=true;
@@ -694,6 +702,7 @@ $('#form').addEventListener('submit',async e=>{
     d._id=ref.id;if(ed){editing=null;$('#editBar').hidden=true;}
     try{navigator.vibrate&&navigator.vibrate(30);}catch(_){}
     if(tipo==='compra'||tipo==='venda')snackRecibo((tipo==='compra'?'Compra':'Venda')+' de '+BRL(d.total)+' salva',d);
+    else if(tipo==='estoque')toast((d.sub==='saida'?'Retirado do estoque: ':'Colocado no estoque: ')+N(d.qtd)+' '+d.unidade+' de '+d.material);
     else toast(tipo==='processo'?(d.perda!=null?'Limpeza salva: perda de '+N(d.perda)+' kg':'Limpeza salva'):(tipo==='compra'?'Compra':tipo==='venda'?'Venda':'Gasto')+' de '+BRL(d.total)+' salva');
     ['#fQtd','#fPreco','#fValor','#fObs','#fEntQ','#fCusto','#fEntPeso'].forEach(i=>$(i).value='');$('#fFoto').value='';fotoData=null;$('#fFotoPrev').hidden=true;$('#fPago').value='1';$('#boxVenc').hidden=true;$$('#saidas .sQ').forEach(x=>x.value='');calcTotal();closeSheet();
     const [y,m]=d.data.split('-').map(Number); if(y!==mY||m-1!==mM){mY=y;mM=m-1;}
@@ -705,16 +714,17 @@ $('#form').addEventListener('submit',async e=>{
 const monthRows=(y,m)=>{const k=key(y,m);return rows.filter(r=>(r.data||'').slice(0,7)===k);};
 function sums(rs){const s={venda:0,compra:0,gasto:0,nv:0,nc:0,ng:0};rs.forEach(r=>{const t=+r.total||0;if(r.tipo==='venda'){s.venda+=t;s.nv++;}else if(r.tipo==='compra'){s.compra+=t;s.nc++;}else if(r.tipo==='gasto'||(r.tipo==='processo'&&t>0)){s.gasto+=t;s.ng++;}else if(r.tipo==='mov'&&r.sub==='emp_out'&&+r.juros>0){s.gasto+=+r.juros;s.ng++;}});s.lucro=s.venda-s.compra-s.gasto;return s;}
 function matStats(){const m={},rend={};
-  const get=(name,un)=>{name=(name||'—').trim();const id=name.toLowerCase()+'|'+(un||'kg');return m[id]||(m[id]={name,un:un||'kg',cq:0,cv:0,vq:0,vv:0,inQ:0,inV:0,outQ:0,prodQ:0});};
+  const get=(name,un)=>{name=(name||'—').trim();const id=name.toLowerCase()+'|'+(un||'kg');return m[id]||(m[id]={name,un:un||'kg',cq:0,cv:0,vq:0,vv:0,inQ:0,inV:0,outQ:0,prodQ:0,semQ:0,ajQ:0});};
   rows.forEach(r=>{if(r.tipo==='compra'){const o=get(r.material,r.unidade);o.cq+=+r.qtd||0;o.cv+=+r.total||0;o.inQ+=+r.qtd||0;o.inV+=+r.total||0;}
-    else if(r.tipo==='venda'){const o=get(r.material,r.unidade);o.vq+=+r.qtd||0;o.vv+=+r.total||0;}});
+    else if(r.tipo==='venda'){const o=get(r.material,r.unidade);o.vq+=+r.qtd||0;o.vv+=+r.total||0;}
+    else if(r.tipo==='estoque'){const o=get(r.material,r.unidade),q=+r.qtd||0;if(r.sub==='saida'){o.outQ+=q;o.ajQ-=q;}else{o.ajQ+=q;if(+r.preco>0){o.inQ+=q;o.inV+=+r.total||q*r.preco;}else o.semQ+=q;}}});
   rows.filter(r=>r.tipo==='processo'&&r.entrada).sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.criadoEm||'').localeCompare(b.criadoEm||'')).forEach(r=>{
     const eu=r.entrada.unidade||'kg',e=get(r.entrada.material,eu),q=+r.entrada.qtd||0,pesoE=eu==='kg'?q:(+r.entrada.peso||0),pcE=e.inQ?e.inV/e.inQ:0,custo=q*pcE+(+r.total||0);e.outQ+=q;
     const outs=(r.saidas||[]).map(x=>({o:get(x.material,'kg'),q:+x.qtd||0}));
     let W=outs.reduce((a,x)=>a+x.q*(x.o.vq?x.o.vv/x.o.vq:0),0);const byVal=W>0;if(!byVal)W=outs.reduce((a,x)=>a+x.q,0)||1;
     outs.forEach(x=>{const w=byVal?x.q*(x.o.vq?x.o.vv/x.o.vq:0):x.q;x.o.inQ+=x.q;x.o.inV+=custo*w/W;x.o.prodQ+=x.q;});
     const rk=e.name.toLowerCase()+'|'+eu,R=rend[rk]||(rend[rk]={name:e.name,un:eu,in:0,outs:{},n:0,peso:0,saiPeso:0});R.in+=q;R.n++;outs.forEach(x=>{R.outs[x.o.name]=(R.outs[x.o.name]||0)+x.q;});if(pesoE){R.peso+=pesoE;R.saiPeso+=outs.reduce((a,x)=>a+x.q,0);}});
-  Object.values(m).forEach(o=>{o.pc=o.inQ?o.inV/o.inQ:0;o.pv=o.vq?o.vv/o.vq:0;o.est=Math.max(0,o.inQ-o.vq-o.outQ);o.parado=o.est*o.pc;});
+  Object.values(m).forEach(o=>{o.pc=o.inQ?o.inV/o.inQ:0;o.pv=o.vq?o.vv/o.vq:0;o.est=Math.max(0,o.inQ+o.semQ-o.vq-o.outQ);o.parado=o.est*o.pc;});
   Object.defineProperty(m,'_rend',{value:rend,enumerable:false});return m;}
 function rendOf(ms,name){name=(name||'').trim().toLowerCase();const R=ms._rend[name]||ms._rend[name+'|kg']||ms._rend[name+'|pç'];if(!R||!R.in)return null;
   const outs=Object.entries(R.outs).map(([n,q])=>{const o=ms[n.toLowerCase()+'|kg'];return {n,q,pct:q/R.in,pv:o&&o.pv||0};}).sort((a,b)=>b.q-a.q);
@@ -844,6 +854,7 @@ function listInto(el,rs,delBtn){
   el.innerHTML=rs.map(r=>{const d=(r.data||'').slice(8,10)+'/'+(r.data||'').slice(5,7);
     if(r.tipo==='processo'&&r.entrada){const sai=(r.saidas||[]).map(x=>N(x.qtd)+' kg '+esc(x.material)).join(', ');
       return `<div class="item"><div class="dot processo">L</div><div style="min-width:0"><div class="t">Limpeza: ${esc(r.entrada.material)}</div><div class="s">${N(r.entrada.qtd)} ${r.entrada.unidade==='pç'?'peças':'kg'} → ${sai}${r.perda!=null?' · perda '+N(r.perda)+' kg':''} · ${d}</div></div><div class="r"><b>${r.total?'−'+BRL(r.total):''}</b>${delBtn&&isOwner?`<div class="btns"><button class="del" data-edit="${esc(r._id)}">Editar</button><button class="del" data-id="${esc(r._id)}">Apagar</button></div>`:''}</div></div>`;}
+    if(r.tipo==='estoque'){const sa=r.sub==='saida';return `<div class="item"><div class="dot estoque">E</div><div style="min-width:0"><div class="t">${sa?'Tirado do estoque':'Colocado no estoque'}: ${esc(r.material)}</div><div class="s">${r.preco?'custo '+BRL(+r.preco)+'/'+esc(r.unidade||'kg')+' · ':''}${r.obs?esc(r.obs)+' · ':''}${d}</div></div><div class="r"><b>${sa?'−':'+'}${N(+r.qtd||0)} ${esc(r.unidade||'kg')}</b>${delBtn&&isOwner?`<div class="btns"><button class="del" data-edit="${esc(r._id)}">Editar</button><button class="del" data-id="${esc(r._id)}">Apagar</button></div>`:''}</div></div>`;}
     if(r.tipo==='mov'){const ent=r.sub==='emp_in'||r.sub==='aporte';const nm={emp_in:'Empréstimo recebido',emp_out:'Pagamento de empréstimo',aporte:'Dinheiro colocado',retirada:'Retirada'}[r.sub]||'Movimento';
       return `<div class="item"><div class="dot mov">${ent?'+':'−'}</div><div style="min-width:0"><div class="t">${nm}</div><div class="s">${esc(r.forma||'')}${r.juros?' · juros '+BRL(+r.juros):''}${r.obs?' · '+esc(r.obs):''} · ${d}</div></div><div class="r"><b class="${ent?'pos':''}">${ent?'+':'−'}${BRL(+r.valor||0)}</b>${delBtn&&isOwner?`<div class="btns"><button class="del" data-id="${esc(r._id)}">Apagar</button></div>`:''}</div></div>`;}
     const t=(r.tipo==='gasto'?esc(r.categoria||'Gasto'):esc(r.material||''))+(r.pago===false?(r.venc&&r.venc<ymd(today)?'<span class="pchip venc">vencido</span>':'<span class="pchip fiado">fiado</span>'):'');
@@ -870,10 +881,12 @@ function renderRend(ms){const list=Object.keys(ms._rend).map(k=>rendOf(ms,k)).fi
     ${pc&&R.pesoPc?`<span class="small muted">Cada peça pesa em média ${N(R.pesoPc,2)} kg.</span>`:''}
     ${R.valKg?`<span class="small">Cada ${pc?'peça':'kg'} sujo rende <b class="num">${BRL(R.valKg)}</b> em material limpo, nos seus preços de venda.</span>`:''}</div>`;}).join(''):'<div class="empty">Quando você registrar uma <b>Limpeza</b> (botão + → Limpeza), aqui aparece quanto cada material sujo rende de cobre, ferro etc. e quanto se perde.</div>';}
 function renderMat(rs,ms){renderRend(ms);
+  const est=Object.values(ms).filter(o=>o.est>0.004).sort((a,b)=>b.parado-a.parado);
+  $('#estTab').innerHTML=est.length?est.map(o=>`<div class="item"><div class="dot estoque">${esc(o.name.slice(0,1).toUpperCase())}</div><div style="min-width:0"><div class="t">${esc(o.name)}</div><div class="s">${o.pc?'custo médio '+BRL(o.pc)+'/'+esc(o.un):'sem custo informado'}</div></div><div class="r"><b>${N(o.est)} ${esc(o.un)}</b><div class="small muted num">${o.parado?BRL(o.parado):''}</div></div></div>`).join(''):'<div class="empty">Nada no estoque ainda. Use <b>+ Colocar material no estoque</b> para lançar o que já está no pátio.</div>';
   const all=Object.values(ms);$('#mParado').textContent=BRL(all.reduce((a,o)=>a+o.parado,0));
   const lm={};rs.filter(r=>r.tipo==='venda').forEach(r=>{const k=(r.material||'—').trim().toLowerCase()+'|'+(r.unidade||'kg');const o=ms[k];if(!o)return;lm[k]=(lm[k]||0)+(+r.qtd||0)*((+r.preco||0)-(o.pc||0));});
   hbars($('#rankMat'),Object.entries(lm).map(([k,v])=>({n:ms[k].name,v,sub:ms[k].pc?N((ms[k].pv-ms[k].pc)/ms[k].pc*100,0)+'%':''})).sort((a,b)=>b.v-a.v).slice(0,8),'var(--good)',BRL);
-  const mc=all.filter(o=>o.inQ||o.vq).sort((a,b)=>(b.cv+b.vv)-(a.cv+a.vv));
+  const mc=all.filter(o=>o.inQ||o.vq||o.semQ||o.ajQ).sort((a,b)=>(b.cv+b.vv)-(a.cv+a.vv));
   $('#matCards').innerHTML=mc.length?mc.map(o=>{const mg=o.pc&&o.pv?(o.pv-o.pc):null;return `<div class="mat"><h3>${esc(o.name)}</h3>
     <div><span>Pago (média)</span><b>${o.pc?BRL(o.pc):'—'}</b></div><div><span>Vendido (média)</span><b>${o.pv?BRL(o.pv):'—'}</b></div>
     ${o.prodQ?`<div><span>Veio da limpeza</span><b>${N(o.prodQ)} ${o.un}</b></div><div><span>Usado na limpeza</span><b>${o.outQ?N(o.outQ)+' '+o.un:'—'}</b></div>`:o.outQ?`<div><span>Mandado p/ limpeza</span><b>${N(o.outQ)} ${o.un}</b></div><div></div>`:''}<div><span>Margem / ${o.un}</span><b class="${mg==null?'':mg>=0?'pos':'neg'}">${mg==null?'—':BRL(mg)+' ('+N(mg/o.pc*100,0)+'%)'}</b></div><div><span>No pátio</span><b>${o.est?N(o.est)+' '+o.un:'—'}</b></div></div>`;}).join(''):'<div class="empty">As fichas aparecem quando você lançar compras e vendas.</div>';
@@ -1004,7 +1017,7 @@ function renderStaff(){const me=auth&&auth.currentUser?auth.currentUser.email:''
 
 /* ---------- relatório do contador ---------- */
 function repRows(){return monthRows(mY,mM).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));}
-const tipoNome={compra:'Compra',venda:'Venda',gasto:'Gasto',processo:'Limpeza',mov:'Movimento'};
+const tipoNome={compra:'Compra',venda:'Venda',gasto:'Gasto',processo:'Limpeza',mov:'Movimento',estoque:'Estoque'};
 $('#repCsv').addEventListener('click',()=>{const n=v=>(+v||0).toFixed(2).replace('.',',');const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const L=[['Data','Tipo','Fornecedor/Cliente','Material/Categoria','Quantidade','Unidade','Preço unitário','Total','Pagamento','Situação','Observação'].map(q).join(';')];
   repRows().forEach(r=>{if(r.tipo==='processo'){L.push([r.data,'Limpeza',r.pessoa,r.entrada.material+' → '+(r.saidas||[]).map(x=>x.material+' '+x.qtd+'kg').join(', '),r.entrada.qtd,r.entrada.unidade,'',n(r.total),'','',r.obs].map(q).join(';'));return;}
@@ -1025,6 +1038,7 @@ $('#repPdf').addEventListener('click',()=>{const rs=repRows(),s=sums(rs);const P
   <div class="hr"></div><div class="c" style="font-size:11px">Gerado pelo app Caixa HS Recicla em ${new Date().toLocaleDateString('pt-BR')} · relatório gerencial, sem valor fiscal</div>`;
   recText=`Relatório HS Recicla ${MES[mM]}/${mY}: vendas ${BRL(s.venda)}, compras ${BRL(s.compra)}, gastos ${BRL(s.gasto)}, resultado ${BRL(s.lucro)}`;$('#recibo').hidden=false;});
 
+$('#btnEstAdd').addEventListener('click',()=>{setTipo('estoque');openSheet();});
 setTipo('compra'); go('inicio');
 
 /* ---------- Firebase ---------- */
