@@ -95,7 +95,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
 /* header */
 header.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:12px;min-width:0}
-.brand{min-width:0}
+.brand{min-width:0}.brand>div{min-width:0}.brand b{overflow:hidden;text-overflow:ellipsis}
 @media (max-width:420px){.brand span{display:none}}
 .brand{display:flex;align-items:center;gap:10px}
 .logo{object-fit:cover;width:40px;height:40px;border-radius:12px;background:linear-gradient(140deg,var(--copper),var(--copper2));display:grid;place-items:center;font-family:var(--f-display);font-weight:800;color:#fff;font-size:18px;box-shadow:0 6px 18px var(--copper-glow)}
@@ -234,6 +234,42 @@ nav.tabs .fab svg{width:28px;height:28px}
 .view.on>*{animation:rise .35s ease both}
 .view.on>*:nth-child(2){animation-delay:.04s}.view.on>*:nth-child(3){animation-delay:.08s}.view.on>*:nth-child(4){animation-delay:.12s}.view.on>*:nth-child(5){animation-delay:.16s}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ---------- telas maiores ---------- */
+.fabtxt{display:none}
+.chart svg{max-height:340px}
+@media (min-width:600px) and (max-width:959px){
+  nav.tabs{padding-left:max(10px,calc(50% - 280px));padding-right:max(10px,calc(50% - 280px))}
+  .wrap{max-width:760px}
+  .sheet{left:50%;right:auto;width:min(620px,100%);transform:translate(-50%,105%)}
+  .sheet.open{transform:translate(-50%,0)}
+}
+@media (min-width:960px){
+  body{padding-left:252px;padding-right:28px;padding-bottom:32px}
+  .wrap{max-width:1240px;gap:18px}
+  nav.tabs{top:0;bottom:0;left:0;right:auto;width:224px;display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:96px 14px 18px;border-top:none;border-right:1px solid var(--line);background:var(--panel)}
+  nav.tabs button{flex-direction:row;justify-content:flex-start;gap:12px;font-size:15px;padding:11px 14px;color:var(--muted)}
+  nav.tabs button svg{width:20px;height:20px}
+  nav.tabs button[aria-current="page"]{background:var(--copper-glow)}
+  nav.tabs .fab{order:-1;width:auto;height:50px;margin:0 0 14px;padding:0 14px;border-radius:14px;flex-direction:row;justify-content:center;gap:8px;color:var(--on-brand);font-size:15px;font-weight:700}
+  nav.tabs .fab svg{width:20px;height:20px}
+  .fabtxt{display:inline}
+  nav.tabs::before{content:"";position:absolute;top:18px;left:20px;width:184px;height:60px;background:url(logo-full.jpg) left center/contain no-repeat}
+  header.top .brand .logo{display:none}
+  .view{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:18px;align-items:start}
+  .view>*{grid-column:1/-1}
+  .view>.col-a{grid-column:1}
+  .view>.col-b{grid-column:2}
+  #v-relatorios .grid2,#v-caixa .grid2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .hero{padding:24px 26px}
+  .kpi{padding:16px}.kpi .v{font-size:20px}
+  .sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(680px,92vw);max-height:90vh;border-radius:22px;border:1px solid var(--line);transform:translate(-50%,-46%);opacity:0;transition:transform .2s ease,opacity .2s ease,visibility 0s .2s}
+  .sheet.open{transform:translate(-50%,-50%);opacity:1;transition:transform .2s ease,opacity .2s ease}
+  .sheet .grab{display:none}
+  .toast,.snack{bottom:28px;left:calc(50% + 112px)}
+  .snack{transform:translateX(-50%)}
+  .toast{transform:translate(-50%,20px)}.toast.show{transform:translate(-50%,0)}
+}
+@media (min-width:1400px){.wrap{max-width:1320px}}
 </style>
 </head>
 <body>
@@ -288,13 +324,13 @@ nav.tabs .fab svg{width:28px;height:28px}
       <div class="kpi"><label><i style="background:var(--buy)"></i>Compras</label><span class="v" id="kC">R$ 0</span><span class="small muted" id="kCn"></span></div>
       <div class="kpi"><label><i style="background:var(--warn)"></i>Gastos</label><span class="v" id="kG">R$ 0</span><span class="small muted" id="kGn"></span></div>
     </div>
-    <div class="card">
+    <div class="card col-a">
       <div class="row"><h2>Lucro acumulado e projeção</h2></div>
       <div class="chart" id="cumChart"></div>
       <div class="legend"><span><i style="background:var(--copper)"></i>Real</span><span><i style="background:transparent;border:2px dashed var(--muted)"></i>Projeção</span><span><i style="background:var(--good)"></i>Meta</span></div>
       <p class="small muted" style="margin:0" id="projTxt"></p>
     </div>
-    <div class="card"><h2>O que os números dizem</h2><div class="insights" id="insights"></div></div>
+    <div class="card col-b"><h2>O que os números dizem</h2><div class="insights" id="insights"></div></div>
     <div class="card"><div class="row"><h2>Últimos lançamentos</h2><button class="link small" data-go="relatorios">Ver todos</button></div><div class="list" id="recent"></div></div>
   </section>
 
@@ -303,7 +339,7 @@ nav.tabs .fab svg{width:28px;height:28px}
     <div class="hero" style="grid-template-columns:minmax(0,1fr)">
       <div style="display:flex;flex-direction:column;gap:6px"><span class="lbl">Material parado no pátio</span><span class="big" id="mParado">R$ 0,00</span><span class="small muted">Tudo que entrou e ainda não saiu, ao preço médio que você pagou.</span></div>
     </div>
-    <div class="card">
+    <div class="card col-a">
       <h2>Calculadora de negociação</h2>
       <p class="small muted" style="margin:0">Quanto posso pagar no lote e ainda ganhar o que eu quero?</p>
       <div class="calc">
@@ -316,7 +352,7 @@ nav.tabs .fab svg{width:28px;height:28px}
       <div class="calc-out"><div><span>Pague até</span><b id="cMax">R$ 0,00</b></div><div style="text-align:right"><span id="cLabel">Lucro no lote</span><b id="cLucro">R$ 0,00</b></div></div>
       <p class="small muted" style="margin:0" id="cHint"></p>
     </div>
-    <div class="card"><h2>Rendimento da limpeza</h2><div id="rendBox" style="display:flex;flex-direction:column;gap:10px"></div></div>
+    <div class="card col-b"><h2>Rendimento da limpeza</h2><div id="rendBox" style="display:flex;flex-direction:column;gap:10px"></div></div>
     <div class="card"><div class="row"><h2>Quem mais dá lucro</h2><span class="small muted">no mês</span></div><div id="rankMat" style="display:flex;flex-direction:column;gap:10px"></div></div>
     <div class="card"><h2>Ficha de cada material</h2><div class="matgrid" id="matCards"></div></div>
   </section>
@@ -427,7 +463,7 @@ nav.tabs .fab svg{width:28px;height:28px}
 <nav class="tabs" aria-label="Seções">
   <button data-go="inicio" aria-current="page" class="owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>Início</button>
   <button data-go="materiais" class="owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Materiais</button>
-  <button class="fab" id="fab" aria-label="Novo lançamento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="fab" id="fab" aria-label="Novo lançamento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="fabtxt">Novo lançamento</span></button>
   <button data-go="relatorios" class="owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Relatórios</button>
   <button data-go="mais" class="owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Mais</button>
 </nav>
