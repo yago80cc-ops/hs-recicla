@@ -280,6 +280,7 @@ nav.tabs .fab svg{width:28px;height:28px}
 </head>
 <body>
 
+<div id="boot" style="position:fixed;inset:0;z-index:69;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center"><img src="logo-h.png" alt="" style="width:72px;height:72px;border-radius:18px"><b id="bootTxt">Conectando à sua conta…</b><button type="button" id="bootReload" hidden class="btn-main" style="padding:12px 20px">Tentar de novo</button></div>
 <div id="login" hidden>
   <div class="box">
     <img src="logo-full.jpg" alt="HS Recicla" style="width:220px;max-width:70%;margin:0 auto;border-radius:18px">
@@ -1044,7 +1045,7 @@ setTipo('compra'); go('inicio');
 /* ---------- Firebase ---------- */
 const firebaseConfig={apiKey:"AIzaSyBDDYwd-63uvXGvnOfu1VZdBC9vHhYeZdM",authDomain:"hs-recicla-caixa.firebaseapp.com",projectId:"hs-recicla-caixa",storageBucket:"hs-recicla-caixa.firebasestorage.app",messagingSenderId:"166476722417",appId:"1:166476722417:web:200bc5d8a0440a8ce4b950"};
 const st=$('#status'),lm=$('#loginMsg');
-if(!window.firebase){st.textContent='Sem internet para abrir o sistema. Conecte e abra de novo.';st.className='status err';return;}
+if(!window.firebase){$('#bootTxt').textContent='Sem internet para abrir o app. Conecte e toque em Tentar de novo.';$('#bootReload').hidden=false;st.textContent='Sem internet para abrir o sistema. Conecte e abra de novo.';st.className='status err';return;}
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),fs=firebase.firestore();auth.languageCode='pt';
 try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(_){}
@@ -1063,7 +1064,9 @@ $('#btnCriar').addEventListener('click',async()=>{lm.className='status';lm.textC
 const sair=()=>auth.signOut();$('#btnSair').addEventListener('click',sair);$('#btnSair2').addEventListener('click',sair);
 $('#metaSave').addEventListener('click',async()=>{if(!cfgRef)return;const v=num('#metaIn');try{await cfgRef.set({metaLucro:v},{merge:true});toast(v?'Meta de '+BRL(v)+' salva':'Meta removida');go('inicio');}catch(e){toast('Não deu para salvar a meta');}});
 
-auth.onAuthStateChanged(async u=>{
+const bootT=setTimeout(()=>{$('#bootTxt').textContent='Está demorando para conectar. Confira a internet e toque em Tentar de novo.';$('#bootReload').hidden=false;},12000);
+$('#bootReload').addEventListener('click',()=>location.reload());
+auth.onAuthStateChanged(async u=>{clearTimeout(bootT);$('#boot').hidden=true;
   unsub.forEach(f=>f());unsub=[];
   if(!u){$('#login').hidden=false;$('#btnSair').hidden=true;col=null;rows=[];render();return;}
   if(u.providerData.some(p=>p.providerId==='password')&&!u.emailVerified){await u.reload().catch(()=>{});
