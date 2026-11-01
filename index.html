@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#a8521f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Caixa HS Recicla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: pátio de sucata — chapa de aço fria com acento cobre; resumo no topo, lançar no meio, detalhe embaixo */
+:root{
+  --bg:#eef0ee; --panel:#ffffff; --ink:#1d2321; --muted:#5f6a66; --line:#d5dbd8;
+  --copper:#a8521f; --copper-soft:#f4e3d6; --good:#1f7a4d; --bad:#b3261e; --warn:#a86b00;
+  --steel:#3d4b47;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141917; --panel:#1d2421; --ink:#e7ece9; --muted:#9aa6a1; --line:#2f3935;
+  --copper:#e08a52; --copper-soft:#3a271b; --good:#5cc690; --bad:#f08a80; --warn:#e3b04f; --steel:#b9c6c1; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141917; --panel:#1d2421; --ink:#e7ece9; --muted:#9aa6a1; --line:#2f3935;
+  --copper:#e08a52; --copper-soft:#3a271b; --good:#5cc690; --bad:#f08a80; --warn:#e3b04f; --steel:#b9c6c1; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:30px;font-weight:700}
+h2{font-size:20px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--steel)}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:3px solid var(--copper);padding-bottom:10px}
+header.top .brand{display:flex;flex-direction:column}
+header.top .brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--copper);font-weight:600}
+.month{display:flex;align-items:center;gap:6px}
+.month button{width:38px;height:38px}
+.month strong{font-family:var(--f-display);font-size:20px;min-width:130px;text-align:center;text-transform:capitalize}
+
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 12px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--copper);outline-offset:2px}
+.btn-main{background:var(--copper);border-color:var(--copper);color:#fff;font-weight:600;padding:12px 16px;font-size:16px}
+
+.status{font-size:13px;color:var(--muted)}
+.status.err{color:var(--bad)}
+
+/* resumo */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kpi label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi .v{font-family:var(--f-num);font-size:20px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi.lucro{border-color:var(--copper);background:var(--copper-soft)}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}}
+
+/* projeção */
+.proj{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.proj div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.proj b{font-family:var(--f-num);font-size:17px;font-variant-numeric:tabular-nums}
+@media (max-width:480px){.proj{grid-template-columns:minmax(0,1fr)}}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--copper)}
+
+/* form */
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tabs button{font-family:var(--f-display);font-size:18px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:10px}
+.tabs button[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:var(--bg)}
+form .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+form .row3{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1fr);gap:10px}
+@media (max-width:480px){form .row3{grid-template-columns:repeat(2,minmax(0,1fr))} form .row3 .f:first-child{grid-column:1/-1}}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.f input,.f select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:10px;width:100%;min-width:0;font-size:16px}
+.total-line{display:flex;justify-content:space-between;align-items:baseline;border-top:1px dashed var(--line);padding-top:10px}
+.total-line .num{font-size:22px;font-weight:500}
+
+/* tabelas */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.r,th.r{text-align:right;white-space:nowrap}
+.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:2px 8px;border:1px solid currentColor}
+.chip.compra{color:var(--copper)} .chip.venda{color:var(--good)} .chip.gasto{color:var(--warn)}
+.del{padding:4px 8px;font-size:12px}
+.del.confirm{background:var(--bad);border-color:var(--bad);color:#fff}
+
+/* gráfico */
+.chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+.empty{border:1px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--muted)}
+.filter{display:flex;gap:6px;flex-wrap:wrap}
+.filter button{padding:5px 10px;font-size:13px}
+.filter button[aria-pressed="true"]{border-color:var(--copper);color:var(--copper);font-weight:600}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50;padding:24px}
+#login .box{max-width:360px;width:100%;display:flex;flex-direction:column;gap:12px;text-align:center}
+#login input{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:12px;font-size:16px;width:100%}
+#login .alt{background:none;border:none;color:var(--copper);text-decoration:underline;padding:4px}
+.sair{font-size:12px;padding:4px 8px}
+</style>
+<style>[hidden]{display:none!important} img{max-width:100%}</style>
+</head>
+<body>
+
+<div id="login" hidden>
+  <div class="box">
+    <span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--copper);font-weight:600">HS Recicla</span>
+    <h1>Caixa do pátio</h1>
+    <p class="muted" style="margin:0">Entre com a conta autorizada para ver e lançar.</p>
+    <button class="btn-main" id="btnGoogle" type="button">Entrar com Google</button>
+    <button class="alt" id="btnShowMail" type="button">Entrar com e-mail e senha</button>
+    <form id="mailForm" hidden style="display:flex;flex-direction:column;gap:8px">
+      <input id="lEmail" type="email" autocomplete="username" placeholder="E-mail">
+      <input id="lSenha" type="password" autocomplete="current-password" placeholder="Senha (mínimo 6 letras ou números)">
+      <button class="btn-main" type="submit">Entrar</button>
+      <button class="alt" id="btnCriar" type="button">Primeira vez? Criar senha</button>
+    </form>
+    <div class="status" id="loginMsg" aria-live="polite"></div>
+  </div>
+</div>
+
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span>HS Recicla</span><h1>Caixa do pátio</h1></div>
+    <div class="month">
+      <button id="prevM" aria-label="Mês anterior">‹</button>
+      <strong id="mLabel">—</strong>
+      <button id="nextM" aria-label="Próximo mês">›</button>
+    </div>
+  </header>
+  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div id="status" class="status">Carregando seus lançamentos…</div><button class="sair" id="btnSair" type="button" hidden>Sair</button></div>
+
+  <section class="kpis" aria-label="Resumo do mês">
+    <div class="kpi"><label>Vendas</label><span class="v" id="kVendas">R$ 0,00</span><span class="small muted" id="kVendasN">—</span></div>
+    <div class="kpi"><label>Compras</label><span class="v" id="kCompras">R$ 0,00</span><span class="small muted" id="kComprasN">—</span></div>
+    <div class="kpi"><label>Gastos</label><span class="v" id="kGastos">R$ 0,00</span><span class="small muted" id="kGastosN">—</span></div>
+    <div class="kpi lucro"><label>Lucro</label><span class="v" id="kLucro">R$ 0,00</span><span class="small muted" id="kMargem">vendas − compras − gastos</span></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card" aria-labelledby="hLanc">
+      <h2 id="hLanc">Lançar</h2>
+      <div class="tabs" role="group" aria-label="Tipo de lançamento">
+        <button type="button" data-tipo="compra" aria-pressed="true">Compra</button>
+        <button type="button" data-tipo="venda" aria-pressed="false">Venda</button>
+        <button type="button" data-tipo="gasto" aria-pressed="false">Gasto</button>
+      </div>
+      <form id="form" autocomplete="off" style="display:flex;flex-direction:column;gap:10px">
+        <div class="row">
+          <div class="f"><label for="fData">Data</label><input id="fData" type="date" required></div>
+          <div class="f"><label for="fPessoa" id="lPessoa">Fornecedor</label><input id="fPessoa" list="dlPessoas" placeholder="Ex.: Leandro"></div>
+        </div>
+        <div id="boxMaterial" class="row3">
+          <div class="f"><label for="fMaterial">Material</label><input id="fMaterial" list="dlMateriais" placeholder="Ex.: Motor de geladeira"></div>
+          <div class="f"><label for="fQtd">Quantidade</label><input id="fQtd" type="number" inputmode="decimal" step="any" min="0" placeholder="0"></div>
+          <div class="f"><label for="fUn">Unidade</label><select id="fUn"><option value="kg">kg</option><option value="pç">peça</option></select></div>
+        </div>
+        <div id="boxCategoria" class="f" hidden><label for="fCat">Categoria</label>
+          <select id="fCat">
+            <option>Combustível</option><option>Frete / caminhão</option><option>Funcionário / diária</option>
+            <option>Aluguel / pátio</option><option>Juros de empréstimo</option><option>Manutenção</option>
+            <option>Anúncios</option><option>Retirada / pró-labore</option><option>Outros</option>
+          </select></div>
+        <div class="row">
+          <div class="f" id="boxPreco"><label for="fPreco">Preço por kg (R$)</label><input id="fPreco" type="number" inputmode="decimal" step="any" min="0" placeholder="0,00"></div>
+          <div class="f" id="boxValor" hidden><label for="fValor">Valor (R$)</label><input id="fValor" type="number" inputmode="decimal" step="any" min="0" placeholder="0,00"></div>
+          <div class="f"><label for="fObs">Observação</label><input id="fObs" placeholder="Opcional"></div>
+        </div>
+        <div class="total-line"><span class="muted">Total</span><span class="num" id="fTotal">R$ 0,00</span></div>
+        <button class="btn-main" type="submit" id="btnSalvar">Salvar compra</button>
+        <div class="status" id="formMsg" aria-live="polite"></div>
+      </form>
+      <datalist id="dlMateriais"></datalist>
+      <datalist id="dlPessoas"></datalist>
+    </section>
+
+    <section class="card" aria-labelledby="hProj">
+      <h2 id="hProj">Projeção do mês</h2>
+      <div id="projBody"></div>
+      <div class="chart">
+        <div class="legend"><span><i style="background:var(--good)"></i>Vendas</span><span><i style="background:var(--copper)"></i>Compras</span><span><i style="background:var(--warn)"></i>Gastos</span></div>
+        <div id="chart"></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="hMat">
+    <h2 id="hMat">Por material</h2>
+    <p class="small muted" style="margin:0">Estoque e valor parado contam tudo desde o primeiro lançamento (compra − venda), ao preço médio de compra.</p>
+    <div class="tbl-wrap" id="matBody"></div>
+  </section>
+
+  <section class="card" aria-labelledby="hList">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <h2 id="hList">Lançamentos do mês</h2>
+      <div class="filter" role="group" aria-label="Filtrar">
+        <button type="button" data-f="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-f="compra" aria-pressed="false">Compras</button>
+        <button type="button" data-f="venda" aria-pressed="false">Vendas</button>
+        <button type="button" data-f="gasto" aria-pressed="false">Gastos</button>
+      </div>
+    </div>
+    <div class="tbl-wrap" id="listBody"></div>
+  </section>
+</div>
+
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const BRL=v=>(v<0?'− ':'')+'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const N=(v,d=1)=>v.toLocaleString('pt-BR',{maximumFractionDigits:d});
+  const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const MAT_BASE=['Motor de geladeira (cobre)','Motor de geladeira (alumínio)','Motor grande','Compressor scroll','Motor de tanquinho','Alternador','Motor de partida','Bloco limpo','Bloco misto','Bateria','Fio misto','Fio de instalação','Garimpo de cobre','Cobre','Alumínio','Ferro','Ar-condicionado (aparelho)'];
+  const pad=n=>String(n).padStart(2,'0');
+  const today=new Date();
+  const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+
+  let rows=[]; let tipo='compra'; let filtro='todos';
+  let mY=today.getFullYear(), mM=today.getMonth();
+  let db=null, col=null, canWrite=true;
+
+  /* ---------- form ---------- */
+  $('#fData').value=ymd(today);
+  function setTipo(t){
+    tipo=t;
+    document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tipo===t));
+    const isGasto=t==='gasto';
+    $('#boxMaterial').hidden=isGasto; $('#boxPreco').hidden=isGasto;
+    $('#boxCategoria').hidden=!isGasto; $('#boxValor').hidden=!isGasto;
+    $('#lPessoa').textContent=t==='compra'?'Fornecedor':t==='venda'?'Comprador':'Pago a';
+    $('#fPessoa').placeholder=t==='compra'?'Ex.: Leandro':t==='venda'?'Ex.: Reciclagem Capixaba':'Ex.: Posto';
+    $('#btnSalvar').textContent='Salvar '+t;
+    calcTotal();
+  }
+  document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>setTipo(b.dataset.tipo)));
+  $('#fUn').addEventListener('change',()=>{$('#boxPreco label').textContent=$('#fUn').value==='kg'?'Preço por kg (R$)':'Preço por peça (R$)';calcTotal();});
+  function num(id){const v=parseFloat(String($(id).value).replace(',','.'));return isFinite(v)?v:0;}
+  function calcTotal(){
+    const t=tipo==='gasto'?num('#fValor'):num('#fQtd')*num('#fPreco');
+    $('#fTotal').textContent=BRL(t); return t;
+  }
+  ['#fQtd','#fPreco','#fValor'].forEach(id=>$(id).addEventListener('input',calcTotal));
+
+  $('#form').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const msg=$('#formMsg');
+    if(!col){msg.textContent='O sistema ainda não conectou ao armazenamento. Espere alguns segundos e tente de novo.';msg.className='status err';return;}
+    const total=calcTotal();
+    const doc={tipo,data:$('#fData').value,pessoa:$('#fPessoa').value.trim(),obs:$('#fObs').value.trim(),total:Math.round(total*100)/100,criadoEm:new Date().toISOString()};
+    if(!doc.data){msg.textContent='Escolha a data.';msg.className='status err';return;}
+    if(tipo==='gasto'){doc.categoria=$('#fCat').value;}
+    else{
+      doc.material=$('#fMaterial').value.trim(); doc.qtd=num('#fQtd'); doc.unidade=$('#fUn').value; doc.preco=num('#fPreco');
+      if(!doc.material){msg.textContent='Informe o material.';msg.className='status err';return;}
+      if(!doc.qtd){msg.textContent='Informe a quantidade.';msg.className='status err';return;}
+    }
+    if(!(doc.total>0)){msg.textContent='O total está zerado. Confira quantidade e preço.';msg.className='status err';return;}
+    const btn=$('#btnSalvar'); btn.disabled=true; msg.textContent='Salvando…'; msg.className='status';
+    try{
+      await col.add(doc);
+      msg.textContent=(tipo==='compra'?'Compra':tipo==='venda'?'Venda':'Gasto')+' de '+BRL(doc.total)+' salva.';
+      $('#fQtd').value='';$('#fPreco').value='';$('#fValor').value='';$('#fObs').value='';
+      calcTotal();
+      const [y,m]=doc.data.split('-').map(Number); if(y!==mY||m-1!==mM){mY=y;mM=m-1;render();}
+    }catch(err){
+      msg.className='status err';
+      msg.textContent=err&&err.code==='invalid_argument'?'Você não tem permissão para lançar neste sistema.':err&&err.code==='quota_exceeded'?'O armazenamento está cheio. Apague lançamentos antigos.':'Não deu para salvar agora. Tente de novo em instantes.';
+    }finally{btn.disabled=false;}
+  });
+
+  /* ---------- month nav ---------- */
+  $('#prevM').addEventListener('click',()=>{mM--;if(mM<0){mM=11;mY--;}render();});
+  $('#nextM').addEventListener('click',()=>{mM++;if(mM>11){mM=0;mY++;}render();});
+  document.querySelectorAll('.filter button').forEach(b=>b.addEventListener('click',()=>{filtro=b.dataset.f;document.querySelectorAll('.filter button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderList();}));
+
+  /* ---------- calc ---------- */
+  const key=(y,m)=>y+'-'+pad(m+1);
+  function monthRows(y,m){const k=key(y,m);return rows.filter(r=>(r.data||'').slice(0,7)===k);}
+  function sums(rs){
+    const s={venda:0,compra:0,gasto:0,nv:0,nc:0,ng:0};
+    rs.forEach(r=>{const t=+r.total||0; if(r.tipo==='venda'){s.venda+=t;s.nv++;} else if(r.tipo==='compra'){s.compra+=t;s.nc++;} else if(r.tipo==='gasto'){s.gasto+=t;s.ng++;}});
+    s.lucro=s.venda-s.compra-s.gasto; return s;
+  }
+
+  /* ---------- render ---------- */
+  function render(){
+    $('#mLabel').textContent=MESES[mM]+' '+mY;
+    const rs=monthRows(mY,mM); const s=sums(rs);
+    $('#kVendas').textContent=BRL(s.venda); $('#kVendasN').textContent=s.nv+(s.nv===1?' venda':' vendas');
+    $('#kCompras').textContent=BRL(s.compra); $('#kComprasN').textContent=s.nc+(s.nc===1?' compra':' compras');
+    $('#kGastos').textContent=BRL(s.gasto); $('#kGastosN').textContent=s.ng+(s.ng===1?' gasto':' gastos');
+    const kl=$('#kLucro'); kl.textContent=BRL(s.lucro); kl.className='v '+(s.lucro>0?'pos':s.lucro<0?'neg':'');
+    $('#kMargem').textContent=s.venda>0?'margem de '+N(s.lucro/s.venda*100)+'% sobre vendas':'vendas − compras − gastos';
+    renderProj(s); renderChart(rs); renderMat(); renderList(); renderLists();
+  }
+
+  function renderProj(s){
+    const dim=new Date(mY,mM+1,0).getDate();
+    const isCur=mY===today.getFullYear()&&mM===today.getMonth();
+    const isFuture=new Date(mY,mM,1)>today;
+    const el=$('#projBody');
+    // média dos 3 meses anteriores
+    let prev=[]; for(let i=1;i<=3;i++){const d=new Date(mY,mM-i,1);const ps=sums(monthRows(d.getFullYear(),d.getMonth()));if(ps.nv+ps.nc+ps.ng>0)prev.push(ps);}
+    const avg=k=>prev.length?prev.reduce((a,p)=>a+p[k],0)/prev.length:null;
+    const avgTxt=prev.length?`<p class="small muted" style="margin:0">Média dos ${prev.length===1?'último mês':'últimos '+prev.length+' meses'} com lançamentos: vendas ${BRL(avg('venda'))} · lucro <span class="${avg('lucro')>=0?'pos':'neg'}">${BRL(avg('lucro'))}</span></p>`:'';
+    if(isFuture){el.innerHTML='<p class="muted" style="margin:0">Esse mês ainda não começou.</p>'+avgTxt;return;}
+    if(!isCur){
+      el.innerHTML=`<div class="proj"><div><span class="small muted">Vendeu</span><b>${BRL(s.venda)}</b></div><div><span class="small muted">Gastou + comprou</span><b>${BRL(s.compra+s.gasto)}</b></div><div><span class="small muted">Lucro fechado</span><b class="${s.lucro>=0?'pos':'neg'}">${BRL(s.lucro)}</b></div></div>`+avgTxt;return;
+    }
+    const day=today.getDate(); const f=dim/day;
+    const pv=s.venda*f, pc=s.compra*f, pg=s.gasto*f, pl=pv-pc-pg;
+    el.innerHTML=`
+      <p class="small muted" style="margin:0">Dia ${day} de ${dim}. Se continuar no ritmo de agora, o mês fecha assim:</p>
+      <div class="bar" aria-hidden="true"><i style="width:${Math.round(day/dim*100)}%"></i></div>
+      <div class="proj">
+        <div><span class="small muted">Vendas previstas</span><b>${BRL(pv)}</b></div>
+        <div><span class="small muted">Compras + gastos</span><b>${BRL(pc+pg)}</b></div>
+        <div><span class="small muted">Lucro previsto</span><b class="${pl>=0?'pos':'neg'}">${BRL(pl)}</b></div>
+      </div>
+      <p class="small muted" style="margin:0">Ritmo atual: ${BRL(s.venda/day)} vendidos e ${BRL(s.lucro/day)} de lucro por dia.</p>`+avgTxt;
+  }
+
+  function renderChart(rs){
+    const dim=new Date(mY,mM+1,0).getDate();
+    const byDay=Array.from({length:dim},()=>({venda:0,compra:0,gasto:0}));
+    rs.forEach(r=>{const d=+(r.data||'').slice(8,10);if(d>=1&&d<=dim&&byDay[d-1][r.tipo]!==undefined)byDay[d-1][r.tipo]+=+r.total||0;});
+    const max=Math.max(1,...byDay.map(d=>Math.max(d.venda,d.compra+d.gasto)));
+    const W=620,H=170,L=46,B=22,T=8,cw=(W-L-6)/dim;
+    const y=v=>T+(H-T-B)*(1-v/max);
+    let g='';
+    [0,.5,1].forEach(p=>{const v=max*p;g+=`<line x1="${L}" x2="${W-4}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--f-num)">${v>=1000?N(v/1000)+'k':N(v,0)}</text>`;});
+    byDay.forEach((d,i)=>{
+      const x=L+i*cw, bw=Math.max(1.5,cw/2-1.5);
+      if(d.venda)g+=`<rect x="${x+1}" y="${y(d.venda)}" width="${bw}" height="${y(0)-y(d.venda)}" fill="var(--good)" rx="1"><title>Dia ${i+1}: vendas ${BRL(d.venda)}</title></rect>`;
+      if(d.compra)g+=`<rect x="${x+1+bw+1}" y="${y(d.compra)}" width="${bw}" height="${y(0)-y(d.compra)}" fill="var(--copper)" rx="1"><title>Dia ${i+1}: compras ${BRL(d.compra)}</title></rect>`;
+      if(d.gasto)g+=`<rect x="${x+1+bw+1}" y="${y(d.compra+d.gasto)}" width="${bw}" height="${y(d.compra)-y(d.compra+d.gasto)}" fill="var(--warn)" rx="1"><title>Dia ${i+1}: gastos ${BRL(d.gasto)}</title></rect>`;
+      if((i+1)%5===0||i===0)g+=`<text x="${x+cw/2}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--f-num)">${i+1}</text>`;
+    });
+    $('#chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Vendas, compras e gastos por dia">${g}</svg>`;
+  }
+
+  function renderMat(){
+    const m={}; const k=key(mY,mM);
+    rows.forEach(r=>{
+      if(r.tipo!=='compra'&&r.tipo!=='venda')return;
+      const name=(r.material||'—').trim(); const id=name.toLowerCase()+'|'+(r.unidade||'kg');
+      const o=m[id]||(m[id]={name,un:r.unidade||'kg',cq:0,cv:0,vq:0,vv:0,mcq:0,mcv:0,mvq:0,mvv:0});
+      const q=+r.qtd||0,t=+r.total||0,inM=(r.data||'').slice(0,7)===k;
+      if(r.tipo==='compra'){o.cq+=q;o.cv+=t;if(inM){o.mcq+=q;o.mcv+=t;}}else{o.vq+=q;o.vv+=t;if(inM){o.mvq+=q;o.mvv+=t;}}
+    });
+    const list=Object.values(m).sort((a,b)=>(b.mcv+b.mvv)-(a.mcv+a.mvv)||(b.cv-a.cv));
+    if(!list.length){$('#matBody').innerHTML='<div class="empty">Quando você lançar compras e vendas, aqui aparece quanto pagou e vendeu em média por material, a margem e o que ainda está parado no pátio.</div>';return;}
+    let parado=0;
+    const tr=list.map(o=>{
+      const pc=o.cq?o.cv/o.cq:0, pv=o.vq?o.vv/o.vq:0;
+      const est=o.cq-o.vq, val=est>0?est*pc:0; parado+=val;
+      const mg=pc&&pv?pv-pc:null;
+      return `<tr><td>${esc(o.name)}</td>
+        <td class="r num">${o.mcq?N(o.mcq)+' '+o.un:'—'}</td>
+        <td class="r num">${o.mvq?N(o.mvq)+' '+o.un:'—'}</td>
+        <td class="r num">${pc?BRL(pc):'—'}</td>
+        <td class="r num">${pv?BRL(pv):'—'}</td>
+        <td class="r num ${mg==null?'':mg>=0?'pos':'neg'}">${mg==null?'—':BRL(mg)+' <span class="muted small">('+N(mg/pc*100,0)+'%)</span>'}</td>
+        <td class="r num">${est>0?N(est)+' '+o.un:'—'}</td>
+        <td class="r num">${val?BRL(val):'—'}</td></tr>`;}).join('');
+    $('#matBody').innerHTML=`<table><thead><tr><th>Material</th><th class="r">Comprou no mês</th><th class="r">Vendeu no mês</th><th class="r">Preço médio compra</th><th class="r">Preço médio venda</th><th class="r">Margem por un.</th><th class="r">No pátio</th><th class="r">Valor parado</th></tr></thead><tbody>${tr}</tbody>
+      <tfoot><tr><td colspan="7"><b>Material parado no pátio</b></td><td class="r num"><b>${BRL(parado)}</b></td></tr></tfoot></table>`;
+  }
+
+  function renderList(){
+    let rs=monthRows(mY,mM).slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')||(b.criadoEm||'').localeCompare(a.criadoEm||''));
+    if(filtro!=='todos')rs=rs.filter(r=>r.tipo===filtro);
+    if(!rs.length){$('#listBody').innerHTML='<div class="empty">Nenhum lançamento '+(filtro==='todos'?'':'desse tipo ')+'em '+MESES[mM]+'. Use o quadro “Lançar” para registrar a primeira compra, venda ou gasto.</div>';return;}
+    $('#listBody').innerHTML=`<table><thead><tr><th>Dia</th><th>Tipo</th><th>Descrição</th><th class="r">Total</th><th></th></tr></thead><tbody>${rs.map(r=>{
+      const d=(r.data||'').slice(8,10)+'/'+(r.data||'').slice(5,7);
+      const desc=r.tipo==='gasto'?esc(r.categoria||'Gasto')+(r.pessoa?' · '+esc(r.pessoa):''):
+        esc(r.material||'')+' · <span class="num">'+N(+r.qtd||0)+' '+esc(r.unidade||'kg')+' × '+BRL(+r.preco||0)+'</span>'+(r.pessoa?' · '+esc(r.pessoa):'');
+      return `<tr><td class="num">${d}</td><td><span class="chip ${r.tipo}">${r.tipo}</span></td><td>${desc}${r.obs?'<div class="small muted">'+esc(r.obs)+'</div>':''}</td><td class="r num">${BRL(+r.total||0)}</td><td class="r">${canWrite?`<button class="del" data-id="${esc(r._id)}">Apagar</button>`:''}</td></tr>`;}).join('')}</tbody></table>`;
+  }
+  $('#listBody').addEventListener('click',async e=>{
+    const b=e.target.closest('.del'); if(!b||!col)return;
+    if(!b.classList.contains('confirm')){b.classList.add('confirm');b.textContent='Confirmar';setTimeout(()=>{if(b.isConnected){b.classList.remove('confirm');b.textContent='Apagar';}},4000);return;}
+    b.disabled=true;b.textContent='Apagando…';
+    try{await col.doc(b.dataset.id).delete();}catch(err){b.disabled=false;b.textContent='Erro, tente de novo';}
+  });
+
+  function renderLists(){
+    const mats=new Set(MAT_BASE), ppl=new Set(['Leandro','Renato','Reciclagem Capixaba']);
+    rows.forEach(r=>{if(r.material)mats.add(r.material);if(r.pessoa)ppl.add(r.pessoa);});
+    $('#dlMateriais').innerHTML=[...mats].map(v=>`<option value="${esc(v)}">`).join('');
+    $('#dlPessoas').innerHTML=[...ppl].map(v=>`<option value="${esc(v)}">`).join('');
+  }
+  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+  setTipo('compra'); render();
+
+  /* ---------- storage (Firebase) ---------- */
+  const firebaseConfig={apiKey:"AIzaSyBDDYwd-63uvXGvnOfu1VZdBC9vHhYeZdM",authDomain:"hs-recicla-caixa.firebaseapp.com",projectId:"hs-recicla-caixa",storageBucket:"hs-recicla-caixa.firebasestorage.app",messagingSenderId:"166476722417",appId:"1:166476722417:web:200bc5d8a0440a8ce4b950"};
+  const st=$('#status'), lm=$('#loginMsg');
+  if(!window.firebase){st.textContent='Sem internet para abrir o sistema. Conecte e abra de novo.';st.className='status err';return;}
+  firebase.initializeApp(firebaseConfig);
+  const auth=firebase.auth(); const fs=firebase.firestore();
+  try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(_){}
+  auth.languageCode='pt';
+  let unsub=null;
+  $('#btnGoogle').addEventListener('click',async()=>{
+    lm.textContent='Abrindo o Google…';lm.className='status';
+    try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
+    catch(e){
+      if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){try{await auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());return;}catch(e2){e=e2;}}
+      lm.className='status err';lm.textContent=e.code==='auth/popup-closed-by-user'?'Login cancelado.':'Não deu para entrar com Google ('+(e.code||'erro')+'). Tente entrar com e-mail e senha.';
+    }
+  });
+  $('#btnShowMail').addEventListener('click',()=>{$('#mailForm').hidden=false;$('#btnShowMail').hidden=true;$('#lEmail').focus();});
+  $('#mailForm').addEventListener('submit',async e=>{
+    e.preventDefault(); lm.className='status'; lm.textContent='Entrando…';
+    try{await auth.signInWithEmailAndPassword($('#lEmail').value.trim(),$('#lSenha').value);}
+    catch(err){lm.className='status err';lm.textContent=(err.code==='auth/invalid-credential'||err.code==='auth/wrong-password'||err.code==='auth/user-not-found')?'E-mail ou senha errados. Se é a primeira vez, toque em "Criar senha".':'Não deu para entrar ('+err.code+').';}
+  });
+  $('#btnCriar').addEventListener('click',async()=>{
+    lm.className='status'; lm.textContent='Criando…';
+    try{const c=await auth.createUserWithEmailAndPassword($('#lEmail').value.trim(),$('#lSenha').value);await c.user.sendEmailVerification();lm.textContent='Senha criada. Abra o e-mail que mandamos, toque no link de confirmação e depois entre de novo aqui.';}
+    catch(err){lm.className='status err';lm.textContent=err.code==='auth/email-already-in-use'?'Esse e-mail já tem senha. Use "Entrar".':err.code==='auth/weak-password'?'A senha precisa ter pelo menos 6 caracteres.':'Não deu para criar ('+err.code+').';}
+  });
+  $('#btnSair').addEventListener('click',()=>auth.signOut());
+  auth.onAuthStateChanged(async u=>{
+    if(unsub){unsub();unsub=null;}
+    if(!u){$('#login').hidden=false;$('#btnSair').hidden=true;col=null;rows=[];render();return;}
+    if(u.providerData.some(p=>p.providerId==='password')&&!u.emailVerified){
+      await u.reload().catch(()=>{});
+      if(!auth.currentUser.emailVerified){$('#login').hidden=false;lm.className='status err';lm.textContent='Confirme seu e-mail pelo link que enviamos e entre de novo.';await auth.signOut();return;}
+    }
+    $('#login').hidden=true;$('#btnSair').hidden=false;
+    col=fs.collection('lancamentos');
+    st.textContent='Carregando seus lançamentos…';st.className='status';
+    const timer=setTimeout(()=>{st.textContent='Sem conexão. Mostrando o que já estava salvo no celular.';st.className='status err';},10000);
+    unsub=col.onSnapshot({includeMetadataChanges:true},snap=>{
+      rows=snap.docs.map(d=>Object.assign({_id:d.id},d.data()));
+      if(!snap.metadata.fromCache){clearTimeout(timer);st.textContent=(u.email||'')+' · '+(rows.length?rows.length+' lançamentos salvos':'nenhum lançamento ainda');st.className='status';}
+      render();
+    },err=>{clearTimeout(timer);st.className='status err';st.textContent=err.code==='permission-denied'?'Essa conta ('+u.email+') não tem acesso. Saia e entre com a conta da HS Recicla.':'Erro ao carregar ('+err.code+').';});
+  });
+})();
+</script>
+
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}</script>
+</body>
+</html>
