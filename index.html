@@ -150,11 +150,19 @@ nav.tabs .fab svg{width:28px;height:28px}
 .sheet.open{transform:none;visibility:visible;transition:transform .25s ease}
 .sheet .grab{width:42px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
 .sheet .inner{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
-.typeseg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--panel2);border-radius:14px;padding:4px}
-.typeseg button{border:none;background:none;font-family:var(--f-display);font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:9px;border-radius:11px;color:var(--muted)}
+.typeseg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--panel2);border-radius:14px;padding:4px}
+.typeseg button{border:none;background:none;font-family:var(--f-display);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:9px;border-radius:11px;color:var(--muted)}
 .typeseg button[aria-pressed="true"][data-tipo="compra"]{background:var(--copper);color:#fff}
 .typeseg button[aria-pressed="true"][data-tipo="venda"]{background:var(--good);color:#06180e}
 .typeseg button[aria-pressed="true"][data-tipo="gasto"]{background:var(--warn);color:#211500}
+.typeseg button[aria-pressed="true"][data-tipo="processo"]{background:var(--blue);color:#06142a}
+.dot.processo{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+.sai{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:8px;align-items:end}
+.sai button{height:46px;padding:0}
+.perda{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--panel2);border-radius:14px;padding:12px 14px;font-size:14px}
+.rend{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.stack{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--line)}
+.stack i{display:block;height:100%}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .chips button{flex:none;font-size:13px;padding:6px 11px;border-radius:999px}
 .g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -259,6 +267,7 @@ nav.tabs .fab svg{width:28px;height:28px}
       <div class="calc-out"><div><span>Pague até</span><b id="cMax">R$ 0,00</b></div><div style="text-align:right"><span id="cLabel">Lucro no lote</span><b id="cLucro">R$ 0,00</b></div></div>
       <p class="small muted" style="margin:0" id="cHint"></p>
     </div>
+    <div class="card"><h2>Rendimento da limpeza</h2><div id="rendBox" style="display:flex;flex-direction:column;gap:10px"></div></div>
     <div class="card"><div class="row"><h2>Quem mais dá lucro</h2><span class="small muted">no mês</span></div><div id="rankMat" style="display:flex;flex-direction:column;gap:10px"></div></div>
     <div class="card"><h2>Ficha de cada material</h2><div class="matgrid" id="matCards"></div></div>
   </section>
@@ -273,7 +282,7 @@ nav.tabs .fab svg{width:28px;height:28px}
     </div>
     <div class="card">
       <div class="row"><h2>Todos os lançamentos do mês</h2>
-        <div class="seg" id="filtro"><button data-f="todos" aria-pressed="true">Todos</button><button data-f="compra" aria-pressed="false">Compras</button><button data-f="venda" aria-pressed="false">Vendas</button><button data-f="gasto" aria-pressed="false">Gastos</button></div></div>
+        <div class="seg" id="filtro"><button data-f="todos" aria-pressed="true">Todos</button><button data-f="compra" aria-pressed="false">Compras</button><button data-f="venda" aria-pressed="false">Vendas</button><button data-f="gasto" aria-pressed="false">Gastos</button><button data-f="processo" aria-pressed="false">Limpeza</button></div></div>
       <div class="list" id="allList"></div>
     </div>
   </section>
@@ -309,6 +318,7 @@ nav.tabs .fab svg{width:28px;height:28px}
       <button type="button" data-tipo="compra" aria-pressed="true">Compra</button>
       <button type="button" data-tipo="venda" aria-pressed="false">Venda</button>
       <button type="button" data-tipo="gasto" aria-pressed="false">Gasto</button>
+      <button type="button" data-tipo="processo" aria-pressed="false">Limpeza</button>
     </div>
     <div class="chips" id="chips"></div>
     <div class="g2">
@@ -322,6 +332,19 @@ nav.tabs .fab svg{width:28px;height:28px}
     </div>
     <div id="boxCategoria" class="f" hidden><label for="fCat">Categoria</label>
       <select id="fCat"><option>Combustível</option><option>Frete / caminhão</option><option>Funcionário / diária</option><option>Aluguel / pátio</option><option>Juros de empréstimo</option><option>Manutenção</option><option>Anúncios</option><option>Retirada / pró-labore</option><option>Outros</option></select></div>
+    <div id="boxProc" hidden style="display:flex;flex-direction:column;gap:10px">
+      <p class="small muted" style="margin:0">Registre o que entrou sujo e o que saiu depois de limpo. O app calcula a perda e o rendimento.</p>
+      <div class="g3">
+        <div class="f"><label for="fEnt">Entrou sujo</label><input id="fEnt" list="dlMateriais" placeholder="Ex.: Induzido com ferro"></div>
+        <div class="f"><label for="fEntQ">Peso (kg)</label><input id="fEntQ" type="number" inputmode="decimal" step="any" min="0" placeholder="0"></div>
+        <div class="f"><label>&nbsp;</label><span class="small muted" style="padding:12px 0">kg</span></div>
+      </div>
+      <div class="f"><label>Saiu limpo</label></div>
+      <div id="saidas" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div class="chips" id="saiChips"><button type="button" data-n="Cobre">+ Cobre</button><button type="button" data-n="Ferro">+ Ferro</button><button type="button" data-n="Alumínio">+ Alumínio</button><button type="button" data-n="Latão">+ Latão</button><button type="button" data-n="Plástico">+ Plástico</button><button type="button" data-n="">+ Outro</button></div>
+      <div class="perda"><span>Perda (terra, sujeira, peso morto)</span><b class="num" id="pPerda">0 kg</b></div>
+      <div class="f"><label for="fCusto">Custo da limpeza (R$, opcional)</label><input id="fCusto" type="number" inputmode="decimal" step="any" min="0" placeholder="Mão de obra, disco, energia…"></div>
+    </div>
     <div class="g2">
       <div class="f" id="boxPreco"><label for="fPreco" id="lPreco">Preço por kg (R$)</label><input id="fPreco" type="number" inputmode="decimal" step="any" min="0" placeholder="0,00"></div>
       <div class="f" id="boxValor" hidden><label for="fValor">Valor (R$)</label><input id="fValor" type="number" inputmode="decimal" step="any" min="0" placeholder="0,00"></div>
@@ -348,7 +371,7 @@ const N=(v,d=1)=>(+v||0).toLocaleString('pt-BR',{maximumFractionDigits:d});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const MESC=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-const MAT_BASE=['Motor de geladeira (cobre)','Motor de geladeira (alumínio)','Motor grande','Compressor scroll','Motor de tanquinho','Alternador','Motor de partida','Bloco limpo','Bloco misto','Bateria','Fio misto','Fio de instalação','Garimpo de cobre','Cobre','Alumínio','Ferro','Ar-condicionado (aparelho)'];
+const MAT_BASE=['Motor de geladeira (cobre)','Motor de geladeira (alumínio)','Motor grande','Compressor scroll','Motor de tanquinho','Alternador','Motor de partida','Bloco limpo','Bloco misto','Bateria','Fio misto','Fio de instalação','Garimpo de cobre','Cobre','Alumínio','Ferro','Ar-condicionado (aparelho)','Induzido com ferro','Latão','Plástico'];
 const pad=n=>String(n).padStart(2,'0');
 const today=new Date(); const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const key=(y,m)=>y+'-'+pad(m+1);
@@ -380,14 +403,30 @@ function closeSheet(){ $('#sheet').classList.remove('open');$('#sheetBg').classL
 $('#fab').addEventListener('click',openSheet); $('#sheetBg').addEventListener('click',closeSheet);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();});
 function setTipo(t){tipo=t;$$('.typeseg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tipo===t));
-  const g=t==='gasto'; $('#boxMaterial').hidden=g;$('#boxPreco').hidden=g;$('#boxCategoria').hidden=!g;$('#boxValor').hidden=!g;
-  $('#lPessoa').textContent=t==='compra'?'Fornecedor':t==='venda'?'Comprador':'Pago a';
-  $('#fPessoa').placeholder=t==='compra'?'Ex.: Leandro':t==='venda'?'Ex.: Reciclagem Capixaba':'Ex.: Posto';
-  $('#btnSalvar').textContent='Salvar '+t; renderChips(); calcTotal();}
+  const g=t==='gasto',pr=t==='processo'; $('#boxMaterial').hidden=g||pr;$('#boxPreco').hidden=g||pr;$('#boxCategoria').hidden=!g;$('#boxValor').hidden=!g;$('#boxProc').hidden=!pr;
+  $('#lPessoa').textContent=t==='compra'?'Fornecedor':t==='venda'?'Comprador':pr?'Quem limpou (opcional)':'Pago a';
+  $('#fPessoa').placeholder=t==='compra'?'Ex.: Leandro':t==='venda'?'Ex.: Reciclagem Capixaba':pr?'Ex.: Equipe':'Ex.: Posto';
+  $('#btnSalvar').textContent='Salvar '+(pr?'limpeza':t); if(pr&&!$('#saidas').children.length){addSaida('Cobre');addSaida('Ferro');} renderChips(); calcTotal();}
+function addSaida(n,q){const d=document.createElement('div');d.className='sai';
+  d.innerHTML='<div class="f"><input class="sN" list="dlMateriais" placeholder="Material limpo" value="'+esc(n||'')+'"></div><div class="f"><input class="sQ" type="number" inputmode="decimal" step="any" min="0" placeholder="kg" value="'+(q||'')+'"></div><button type="button" aria-label="Remover">✕</button>';
+  d.querySelector('button').addEventListener('click',()=>{d.remove();calcTotal();});d.querySelector('.sQ').addEventListener('input',calcTotal);
+  $('#saidas').appendChild(d);if(!n)d.querySelector('.sN').focus();return d;}
+$$('#saiChips button').forEach(b=>b.addEventListener('click',()=>{const d=addSaida(b.dataset.n);if(b.dataset.n)d.querySelector('.sQ').focus();}));
+['#fEntQ','#fCusto'].forEach(id=>$(id).addEventListener('input',()=>calcTotal()));
+const saidasVal=()=>$$('#saidas .sai').map(d=>({material:d.querySelector('.sN').value.trim(),qtd:parseFloat(String(d.querySelector('.sQ').value).replace(',','.'))||0,unidade:'kg'})).filter(x=>x.material&&x.qtd>0);
 $$('.typeseg button').forEach(b=>b.addEventListener('click',()=>setTipo(b.dataset.tipo)));
 $('#fUn').addEventListener('change',()=>{$('#lPreco').textContent=$('#fUn').value==='kg'?'Preço por kg (R$)':'Preço por peça (R$)';calcTotal();});
 const num=id=>{const v=parseFloat(String($(id).value).replace(',','.'));return isFinite(v)?v:0;};
-function calcTotal(){const t=tipo==='gasto'?num('#fValor'):num('#fQtd')*num('#fPreco');$('#fTotal').textContent=BRL(t);hint();return t;}
+function calcTotal(){
+  if(tipo==='processo'){const ent=num('#fEntQ'),sai=saidasVal().reduce((a,x)=>a+x.qtd,0),pd=ent-sai;
+    const el=$('#pPerda');el.textContent=ent?N(pd)+' kg ('+N(pd/ent*100,1)+'%)':'0 kg';el.className='num '+(pd<0?'neg':'');
+    const t=num('#fCusto');$('#fTotal').textContent=BRL(t);procHint(ent,sai);return t;}
+  const t=tipo==='gasto'?num('#fValor'):num('#fQtd')*num('#fPreco');$('#fTotal').textContent=BRL(t);hint();return t;}
+function procHint(ent,sai){const h=$('#fHint');h.textContent='';if(!ent||!sai)return;
+  if(sai>ent){h.innerHTML='<b class="neg">Saiu mais peso do que entrou.</b> Confira os pesos.';return;}
+  const ms=matStats();let val=0,ok=true;saidasVal().forEach(x=>{const o=ms[x.material.toLowerCase()+'|kg'];if(o&&o.pv)val+=x.qtd*o.pv;else ok=false;});
+  const e=ms[$('#fEnt').value.trim().toLowerCase()+'|kg'];
+  if(val&&ok){h.innerHTML='O que saiu vale uns <b>'+BRL(val)+'</b> nos seus preços de venda'+(e&&e.pc?' (o sujo custou <b>'+BRL(ent*e.pc)+'</b>)':'')+' → cada kg sujo rendeu <b>'+BRL(val/ent)+'</b>.';}}
 ['#fQtd','#fPreco','#fValor'].forEach(id=>$(id).addEventListener('input',calcTotal));
 $('#fMaterial').addEventListener('input',hint);
 function hint(){
@@ -399,6 +438,9 @@ function hint(){
 }
 function renderChips(){
   const c=$('#chips'); if(tipo==='gasto'){c.innerHTML='';return;}
+  if(tipo==='processo'){const seen=new Map();rows.filter(r=>r.tipo==='processo'&&r.entrada).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||'')).forEach(r=>{if(!seen.has(r.entrada.material))seen.set(r.entrada.material,r);});
+    const list=[...seen.values()].slice(0,6);c.innerHTML=list.map((r,i)=>`<button type="button" data-i="${i}">${esc(r.entrada.material)}</button>`).join('');
+    c.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{const r=list[+b.dataset.i];$('#fEnt').value=r.entrada.material;$('#saidas').innerHTML='';(r.saidas||[]).forEach(x=>addSaida(x.material));$('#fEntQ').focus();calcTotal();}));return;}
   const seen=new Map(); rows.filter(r=>r.tipo===tipo&&r.material).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||'')).forEach(r=>{const k=r.material+'|'+(r.unidade||'kg');if(!seen.has(k))seen.set(k,r);});
   const list=[...seen.values()].slice(0,8);
   c.innerHTML=list.map((r,i)=>`<button type="button" data-i="${i}">${esc(r.material)}</button>`).join('');
@@ -410,16 +452,21 @@ $('#form').addEventListener('submit',async e=>{
   const total=calcTotal();
   const d={tipo,data:$('#fData').value,pessoa:$('#fPessoa').value.trim(),obs:$('#fObs').value.trim(),total:Math.round(total*100)/100,criadoEm:new Date().toISOString()};
   if(tipo==='gasto')d.categoria=$('#fCat').value;
+  else if(tipo==='processo'){d.entrada={material:$('#fEnt').value.trim(),qtd:num('#fEntQ'),unidade:'kg'};d.saidas=saidasVal();
+    if(!d.entrada.material||!d.entrada.qtd){msg.textContent='Informe o material sujo e o peso que entrou.';msg.className='status err';return;}
+    if(!d.saidas.length){msg.textContent='Informe pelo menos um material que saiu limpo, com o peso.';msg.className='status err';return;}
+    const sai=d.saidas.reduce((a,x)=>a+x.qtd,0);if(sai>d.entrada.qtd*1.02){msg.textContent='Saiu mais peso do que entrou. Confira os pesos.';msg.className='status err';return;}
+    d.perda=Math.round((d.entrada.qtd-sai)*100)/100;}
   else{d.material=$('#fMaterial').value.trim();d.qtd=num('#fQtd');d.unidade=$('#fUn').value;d.preco=num('#fPreco');
     if(!d.material){msg.textContent='Informe o material.';msg.className='status err';return;}
     if(!d.qtd){msg.textContent='Informe a quantidade.';msg.className='status err';return;}}
   if(!d.data){msg.textContent='Escolha a data.';msg.className='status err';return;}
-  if(!(d.total>0)){msg.textContent='O total está zerado. Confira quantidade e preço.';msg.className='status err';return;}
+  if(tipo!=='processo'&&!(d.total>0)){msg.textContent='O total está zerado. Confira quantidade e preço.';msg.className='status err';return;}
   const btn=$('#btnSalvar');btn.disabled=true;msg.textContent='Salvando…';
   try{ col.add(d).catch(err=>toast('Erro ao salvar: '+(err.code||'')));  // grava offline também
     try{navigator.vibrate&&navigator.vibrate(30);}catch(_){}
-    toast((tipo==='compra'?'Compra':tipo==='venda'?'Venda':'Gasto')+' de '+BRL(d.total)+' salva');
-    ['#fQtd','#fPreco','#fValor','#fObs'].forEach(i=>$(i).value='');calcTotal();closeSheet();
+    toast(tipo==='processo'?'Limpeza salva: perda de '+N(d.perda)+' kg':(tipo==='compra'?'Compra':tipo==='venda'?'Venda':'Gasto')+' de '+BRL(d.total)+' salva');
+    ['#fQtd','#fPreco','#fValor','#fObs','#fEntQ','#fCusto'].forEach(i=>$(i).value='');$$('#saidas .sQ').forEach(x=>x.value='');calcTotal();closeSheet();
     const [y,m]=d.data.split('-').map(Number); if(y!==mY||m-1!==mM){mY=y;mM=m-1;}
   }catch(err){msg.className='status err';msg.textContent='Não deu para salvar ('+(err.code||'erro')+').';}
   finally{btn.disabled=false;}
@@ -427,10 +474,23 @@ $('#form').addEventListener('submit',async e=>{
 
 /* ---------- cálculos ---------- */
 const monthRows=(y,m)=>{const k=key(y,m);return rows.filter(r=>(r.data||'').slice(0,7)===k);};
-function sums(rs){const s={venda:0,compra:0,gasto:0,nv:0,nc:0,ng:0};rs.forEach(r=>{const t=+r.total||0;if(r.tipo==='venda'){s.venda+=t;s.nv++;}else if(r.tipo==='compra'){s.compra+=t;s.nc++;}else if(r.tipo==='gasto'){s.gasto+=t;s.ng++;}});s.lucro=s.venda-s.compra-s.gasto;return s;}
-function matStats(){const m={};rows.forEach(r=>{if(r.tipo!=='compra'&&r.tipo!=='venda')return;const name=(r.material||'—').trim();const id=name.toLowerCase()+'|'+(r.unidade||'kg');
-  const o=m[id]||(m[id]={name,un:r.unidade||'kg',cq:0,cv:0,vq:0,vv:0});const q=+r.qtd||0,t=+r.total||0;if(r.tipo==='compra'){o.cq+=q;o.cv+=t;}else{o.vq+=q;o.vv+=t;}});
-  Object.values(m).forEach(o=>{o.pc=o.cq?o.cv/o.cq:0;o.pv=o.vq?o.vv/o.vq:0;o.est=Math.max(0,o.cq-o.vq);o.parado=o.est*o.pc;});return m;}
+function sums(rs){const s={venda:0,compra:0,gasto:0,nv:0,nc:0,ng:0};rs.forEach(r=>{const t=+r.total||0;if(r.tipo==='venda'){s.venda+=t;s.nv++;}else if(r.tipo==='compra'){s.compra+=t;s.nc++;}else if(r.tipo==='gasto'||(r.tipo==='processo'&&t>0)){s.gasto+=t;s.ng++;}});s.lucro=s.venda-s.compra-s.gasto;return s;}
+function matStats(){const m={},rend={};
+  const get=(name,un)=>{name=(name||'—').trim();const id=name.toLowerCase()+'|'+(un||'kg');return m[id]||(m[id]={name,un:un||'kg',cq:0,cv:0,vq:0,vv:0,inQ:0,inV:0,outQ:0,prodQ:0});};
+  rows.forEach(r=>{if(r.tipo==='compra'){const o=get(r.material,r.unidade);o.cq+=+r.qtd||0;o.cv+=+r.total||0;o.inQ+=+r.qtd||0;o.inV+=+r.total||0;}
+    else if(r.tipo==='venda'){const o=get(r.material,r.unidade);o.vq+=+r.qtd||0;o.vv+=+r.total||0;}});
+  rows.filter(r=>r.tipo==='processo'&&r.entrada).sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.criadoEm||'').localeCompare(b.criadoEm||'')).forEach(r=>{
+    const e=get(r.entrada.material,'kg'),q=+r.entrada.qtd||0,pcE=e.inQ?e.inV/e.inQ:0,custo=q*pcE+(+r.total||0);e.outQ+=q;
+    const outs=(r.saidas||[]).map(x=>({o:get(x.material,'kg'),q:+x.qtd||0}));
+    let W=outs.reduce((a,x)=>a+x.q*(x.o.vq?x.o.vv/x.o.vq:0),0);const byVal=W>0;if(!byVal)W=outs.reduce((a,x)=>a+x.q,0)||1;
+    outs.forEach(x=>{const w=byVal?x.q*(x.o.vq?x.o.vv/x.o.vq:0):x.q;x.o.inQ+=x.q;x.o.inV+=custo*w/W;x.o.prodQ+=x.q;});
+    const R=rend[e.name.toLowerCase()]||(rend[e.name.toLowerCase()]={name:e.name,in:0,outs:{},n:0});R.in+=q;R.n++;outs.forEach(x=>{R.outs[x.o.name]=(R.outs[x.o.name]||0)+x.q;});});
+  Object.values(m).forEach(o=>{o.pc=o.inQ?o.inV/o.inQ:0;o.pv=o.vq?o.vv/o.vq:0;o.est=Math.max(0,o.inQ-o.vq-o.outQ);o.parado=o.est*o.pc;});
+  Object.defineProperty(m,'_rend',{value:rend,enumerable:false});return m;}
+function rendOf(ms,name){const R=ms._rend[(name||'').trim().toLowerCase()];if(!R||!R.in)return null;
+  const outs=Object.entries(R.outs).map(([n,q])=>{const o=ms[n.toLowerCase()+'|kg'];return {n,q,pct:q/R.in,pv:o&&o.pv||0};}).sort((a,b)=>b.q-a.q);
+  const sai=outs.reduce((a,x)=>a+x.q,0);const valKg=outs.every(x=>x.pv)?outs.reduce((a,x)=>a+x.pct*x.pv,0):null;
+  return {name:R.name,in:R.in,n:R.n,outs,perda:(R.in-sai)/R.in,valKg};}
 function lucroReal(rs,ms){ // vendas − custo médio do que foi vendido − gastos
   let v=0,c=0,g=0,semCusto=0;rs.forEach(r=>{const t=+r.total||0;if(r.tipo==='venda'){v+=t;const o=ms[(r.material||'—').trim().toLowerCase()+'|'+(r.unidade||'kg')];if(o&&o.pc)c+=(+r.qtd||0)*o.pc;else semCusto+=t;}else if(r.tipo==='gasto')g+=t;});
   return {valor:v-c-g,semCusto};}
@@ -541,6 +601,8 @@ function insights(rs,s,ps,ms,pr){
   // fornecedor mais caro por material
   const sup={};rs.filter(r=>r.tipo==='compra'&&r.pessoa).forEach(r=>{const k=(r.material||'').trim().toLowerCase()+'|'+(r.unidade||'kg');(sup[k]=sup[k]||{})[r.pessoa]=(sup[k][r.pessoa]||[]).concat(+r.preco||0);});
   for(const [k,p] of Object.entries(sup)){const avg=Object.entries(p).map(([n,a])=>[n,a.reduce((x,y)=>x+y,0)/a.length]);if(avg.length>1){avg.sort((a,b)=>b[1]-a[1]);const dif=avg[0][1]-avg[avg.length-1][1];if(dif>0){add('$','var(--blue)',`Em ${esc(ms[k]?ms[k].name:k.split('|')[0])}, você paga <b>${BRL(dif)}</b> a mais por ${k.split('|')[1]} para ${esc(avg[0][0])} do que para ${esc(avg[avg.length-1][0])}.`);break;}}}
+  const rl=Object.keys(ms._rend).map(k=>rendOf(ms,k)).filter(Boolean).sort((a,b)=>b.in-a.in)[0];
+  if(rl&&rl.outs[0])add('♻','var(--blue)',`${esc(rl.name)} rende <b>${N(rl.outs[0].pct*100,0)}% de ${esc(rl.outs[0].n)}</b> e perde <b>${N(rl.perda*100,0)}%</b> na limpeza${rl.valKg?'. Cada kg sujo vale <b>'+BRL(rl.valKg)+'</b> depois de limpo':''}.`);
   const gastoPct=s.venda?s.gasto/s.venda*100:0;if(gastoPct>15)add('%','var(--warn)',`Os gastos já comem <b>${N(gastoPct,0)}%</b> das vendas do mês.`);
   if(!out.length)add('i','var(--muted)','Lance mais compras e vendas para eu conseguir comparar e trazer dicas.');
   $('#insights').innerHTML=out.slice(0,5).join('');
@@ -549,6 +611,8 @@ function insights(rs,s,ps,ms,pr){
 function listInto(el,rs,delBtn){
   if(!rs.length){el.innerHTML='<div class="empty">Nada lançado '+(filtro!=='todos'&&delBtn?'desse tipo ':'')+'em '+MES[mM]+'. Toque no <b>+</b> para lançar.</div>';return;}
   el.innerHTML=rs.map(r=>{const d=(r.data||'').slice(8,10)+'/'+(r.data||'').slice(5,7);
+    if(r.tipo==='processo'&&r.entrada){const sai=(r.saidas||[]).map(x=>N(x.qtd)+' kg '+esc(x.material)).join(', ');
+      return `<div class="item"><div class="dot processo">L</div><div style="min-width:0"><div class="t">Limpeza: ${esc(r.entrada.material)}</div><div class="s">${N(r.entrada.qtd)} kg → ${sai} · perda ${N(r.perda)} kg · ${d}</div></div><div class="r"><b>${r.total?'−'+BRL(r.total):N(r.entrada.qtd?(r.perda/r.entrada.qtd*100):0,0)+'%'}</b>${delBtn?`<button class="del" data-id="${esc(r._id)}">Apagar</button>`:''}</div></div>`;}
     const t=r.tipo==='gasto'?esc(r.categoria||'Gasto'):esc(r.material||'');
     const s=r.tipo==='gasto'?(r.pessoa?esc(r.pessoa)+' · ':'')+d:N(+r.qtd||0)+' '+esc(r.unidade||'kg')+' × '+BRL(+r.preco||0)+(r.pessoa?' · '+esc(r.pessoa):'')+' · '+d;
     return `<div class="item"><div class="dot ${r.tipo}">${r.tipo==='compra'?'C':r.tipo==='venda'?'V':'G'}</div><div style="min-width:0"><div class="t">${t}</div><div class="s">${s}${r.obs?' · '+esc(r.obs):''}</div></div><div class="r"><b class="${r.tipo==='venda'?'pos':''}">${r.tipo==='venda'?'+':'−'}${BRL(+r.total||0).replace('R$ ','R$ ')}</b>${delBtn?`<button class="del" data-id="${esc(r._id)}">Apagar</button>`:''}</div></div>`;}).join('');
@@ -558,25 +622,33 @@ $('#allList').addEventListener('click',async e=>{const b=e.target.closest('.del'
   if(!b.classList.contains('confirm')){b.classList.add('confirm');b.textContent='Confirmar';setTimeout(()=>{if(b.isConnected){b.classList.remove('confirm');b.textContent='Apagar';}},4000);return;}
   b.disabled=true;col.doc(b.dataset.id).delete().catch(()=>toast('Não deu para apagar'));toast('Lançamento apagado');});
 
-function renderMat(rs,ms){
+function renderRend(ms){const list=Object.keys(ms._rend).map(k=>rendOf(ms,k)).filter(Boolean).sort((a,b)=>b.in-a.in);
+  const cols=['var(--copper)','var(--muted)','var(--blue)','var(--warn)','var(--good)','#b48cf2'];
+  $('#rendBox').innerHTML=list.length?list.map(R=>`<div class="rend"><div class="row"><b style="font-size:16px">${esc(R.name)}</b><span class="small muted">${N(R.in)} kg limpos em ${R.n} ${R.n===1?'vez':'vezes'}</span></div>
+    <div class="stack">${R.outs.map((x,i)=>`<i style="width:${x.pct*100}%;background:${cols[i%cols.length]}" title="${esc(x.n)}"></i>`).join('')}<i style="width:${Math.max(0,R.perda)*100}%;background:var(--bad);opacity:.7" title="Perda"></i></div>
+    <div class="legend">${R.outs.map((x,i)=>`<span><i style="background:${cols[i%cols.length]}"></i>${esc(x.n)} <b class="num">${N(x.pct*100,1)}%</b></span>`).join('')}<span><i style="background:var(--bad)"></i>Perda <b class="num">${N(R.perda*100,1)}%</b></span></div>
+    ${R.valKg?`<span class="small">Cada kg sujo rende <b class="num">${BRL(R.valKg)}</b> em material limpo, nos seus preços de venda.</span>`:''}</div>`).join(''):'<div class="empty">Quando você registrar uma <b>Limpeza</b> (botão + → Limpeza), aqui aparece quanto cada material sujo rende de cobre, ferro etc. e quanto se perde.</div>';}
+function renderMat(rs,ms){renderRend(ms);
   const all=Object.values(ms);$('#mParado').textContent=BRL(all.reduce((a,o)=>a+o.parado,0));
   const lm={};rs.filter(r=>r.tipo==='venda').forEach(r=>{const k=(r.material||'—').trim().toLowerCase()+'|'+(r.unidade||'kg');const o=ms[k];if(!o)return;lm[k]=(lm[k]||0)+(+r.qtd||0)*((+r.preco||0)-(o.pc||0));});
   hbars($('#rankMat'),Object.entries(lm).map(([k,v])=>({n:ms[k].name,v,sub:ms[k].pc?N((ms[k].pv-ms[k].pc)/ms[k].pc*100,0)+'%':''})).sort((a,b)=>b.v-a.v).slice(0,8),'var(--good)',BRL);
-  const mc=all.filter(o=>o.cq||o.vq).sort((a,b)=>(b.cv+b.vv)-(a.cv+a.vv));
+  const mc=all.filter(o=>o.inQ||o.vq).sort((a,b)=>(b.cv+b.vv)-(a.cv+a.vv));
   $('#matCards').innerHTML=mc.length?mc.map(o=>{const mg=o.pc&&o.pv?(o.pv-o.pc):null;return `<div class="mat"><h3>${esc(o.name)}</h3>
     <div><span>Pago (média)</span><b>${o.pc?BRL(o.pc):'—'}</b></div><div><span>Vendido (média)</span><b>${o.pv?BRL(o.pv):'—'}</b></div>
-    <div><span>Margem / ${o.un}</span><b class="${mg==null?'':mg>=0?'pos':'neg'}">${mg==null?'—':BRL(mg)+' ('+N(mg/o.pc*100,0)+'%)'}</b></div><div><span>No pátio</span><b>${o.est?N(o.est)+' '+o.un:'—'}</b></div></div>`;}).join(''):'<div class="empty">As fichas aparecem quando você lançar compras e vendas.</div>';
+    ${o.prodQ?`<div><span>Veio da limpeza</span><b>${N(o.prodQ)} ${o.un}</b></div><div><span>Usado na limpeza</span><b>${o.outQ?N(o.outQ)+' '+o.un:'—'}</b></div>`:o.outQ?`<div><span>Mandado p/ limpeza</span><b>${N(o.outQ)} ${o.un}</b></div><div></div>`:''}<div><span>Margem / ${o.un}</span><b class="${mg==null?'':mg>=0?'pos':'neg'}">${mg==null?'—':BRL(mg)+' ('+N(mg/o.pc*100,0)+'%)'}</b></div><div><span>No pátio</span><b>${o.est?N(o.est)+' '+o.un:'—'}</b></div></div>`;}).join(''):'<div class="empty">As fichas aparecem quando você lançar compras e vendas.</div>';
   calc();
 }
 function calc(){
   const ms=matStats();const name=$('#cMat').value.trim().toLowerCase();const o=Object.values(ms).find(x=>x.name.toLowerCase()===name);
-  if(o&&!$('#cVenda').value&&o.pv){$('#cVenda').value=o.pv.toFixed(2);}
+  const R=rendOf(ms,$('#cMat').value);
+  if(!$('#cVenda').value){if(o&&o.pv)$('#cVenda').value=o.pv.toFixed(2);else if(R&&R.valKg)$('#cVenda').value=R.valKg.toFixed(2);}
   const pv=num('#cVenda'),mg=num('#cMargem'),q=num('#cQtd'),of=num('#cOferta');
   const max=pv/(1+mg/100);$('#cMax').textContent=BRL(max);
   if(of){$('#cLabel').textContent='Lucro pagando o que ele pede';$('#cLucro').textContent=BRL((pv-of)*(q||1));}
   else{$('#cLabel').textContent=q?'Lucro no lote':'Lucro por unidade';$('#cLucro').textContent=BRL((pv-max)*(q||1));}
   const h=$('#cHint');h.innerHTML='';
   if(of&&pv){const m=(pv-of)/of*100;h.innerHTML=of<=max?`O preço pedido dá <b class="pos">${N(m,0)}% de margem</b>. Pode fechar.`:`O preço pedido dá só <b class="neg">${N(m,0)}%</b>. Ofereça até <b>${BRL(max)}</b>.`;}
+  else if(R&&R.valKg)h.innerHTML=`Material sujo: depois de limpo, cada kg rende <b>${BRL(R.valKg)}</b> (perda de ${N(R.perda*100,0)}%). Use isso como "Vendo a".`+(o&&o.pc?` Você costuma pagar <b>${BRL(o.pc)}</b>.`:'');
   else if(o&&o.pc)h.innerHTML=`Você costuma pagar <b>${BRL(o.pc)}</b> nesse material.`;
 }
 ['#cVenda','#cMargem','#cQtd','#cOferta'].forEach(i=>$(i).addEventListener('input',calc));
