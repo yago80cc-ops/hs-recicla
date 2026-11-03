@@ -277,10 +277,20 @@ nav.tabs .fab svg{width:28px;height:28px}
   .toast{transform:translate(-50%,20px)}.toast.show{transform:translate(-50%,0)}
 }
 @media (min-width:1400px){.wrap{max-width:1320px}}
+#lock{position:fixed;inset:0;z-index:72;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center}
+#lock[hidden],#hello[hidden]{display:none}
+#lock .face{width:92px;height:92px;border-radius:28px;display:grid;place-items:center;background:color-mix(in srgb,var(--copper) 16%,transparent);color:var(--copper)}
+#lock .face svg{width:56px;height:56px}
+#hello{position:fixed;inset:0;z-index:73;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;animation:helloOut .5s ease 1.6s forwards}
+#hello b{font-size:28px;animation:helloIn .5s ease both}#hello span{color:var(--muted);animation:helloIn .5s ease .15s both}
+@keyframes helloIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes helloOut{to{opacity:0;visibility:hidden}}
 </style>
 </head>
 <body>
 
+<div id="lock" hidden><div class="face"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9.5v1M15 9.5v1M12 9.5v3.5h-1M9.5 16c1.5 1.2 3.5 1.2 5 0"/></svg></div><b style="font-size:22px" id="lockHi">Caixa HS Recicla</b><p class="muted" style="margin:0;max-width:300px">Use o rosto ou a digital do celular para abrir o caixa.</p><button type="button" class="btn-main" id="lockBtn" style="padding:14px 22px">Desbloquear</button><div class="status" id="lockMsg" aria-live="polite"></div><button type="button" class="link small" id="lockSair">Entrar com outra conta</button></div>
+<div id="hello" hidden><b id="helloTxt"></b><span id="helloSub"></span></div>
 <div id="boot" style="position:fixed;inset:0;z-index:69;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center"><img src="logo-h.png" alt="" style="width:72px;height:72px;border-radius:18px"><b id="bootTxt">Conectando à sua conta…</b><button type="button" id="bootReload" hidden class="btn-main" style="padding:12px 20px">Tentar de novo</button></div>
 <div id="login" hidden>
   <div class="box">
@@ -474,6 +484,7 @@ nav.tabs .fab svg{width:28px;height:28px}
       <p class="small muted" style="margin:0">É um comprovante de compra/venda, não substitui nota fiscal.</p>
     </div>
     <div class="card"><h2>Backup</h2><p class="small muted" style="margin:0">Baixa um arquivo com todos os lançamentos, preços, fornecedores e ajustes (as fotos não entram). Guarde no computador ou pendrive, de preferência uma vez por mês.</p><button type="button" class="btn-main" id="btnBackup">Baixar backup</button></div>
+    <div class="card"><h2>Bloqueio com rosto</h2><p class="small muted" style="margin:0" id="bioTxt"></p><button type="button" class="btn-main" id="bioBtn">Ativar</button></div>
     <div class="card"><h2>Conta</h2><p class="small muted" style="margin:0" id="contaTxt"></p><button type="button" id="btnSair2">Sair desta conta</button></div>
   </section>
 </div>
@@ -1112,6 +1123,35 @@ $('#btnCriar').addEventListener('click',async()=>{lm.className='status';lm.textC
   catch(err){lm.className='status err';lm.textContent=err.code==='auth/email-already-in-use'?'Esse e-mail já tem senha. Use "Entrar".':err.code==='auth/weak-password'?'A senha precisa ter pelo menos 6 caracteres.':'Não deu para criar ('+err.code+').';}});
 const sair=()=>auth.signOut();$('#btnSair').addEventListener('click',sair);$('#btnSair2').addEventListener('click',sair);
 $('#metaSave').addEventListener('click',async()=>{if(!cfgRef)return;const v=num('#metaIn');try{await cfgRef.set({metaLucro:v},{merge:true});toast(v?'Meta de '+BRL(v)+' salva':'Meta removida');go('inicio');}catch(e){toast('Não deu para salvar a meta');}});
+
+
+// ===== Bloqueio com rosto/digital (WebAuthn do próprio celular) =====
+const LOCK_MIN=3;let bioUser=null,hiddenAt=0;
+const b64u={to:b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),from:s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))};
+const bioKey=()=>'hs_bio_'+(bioUser?bioUser.uid:'');
+const bioGet=()=>{try{return localStorage.getItem(bioKey());}catch(e){return null;}};
+const bioSet=v=>{try{v?localStorage.setItem(bioKey(),v):localStorage.removeItem(bioKey());}catch(e){}};
+const bioOk=async()=>{try{return !!(window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());}catch(e){return false;}};
+const rnd=()=>crypto.getRandomValues(new Uint8Array(32));
+function primeiroNome(u){if(!u)return'';const n=(u.displayName||'').trim().split(/\s+/)[0];if(n)return n;if((u.email||'').toLowerCase()===DONO)return'Yago';const e=(u.email||'').split('@')[0];return e.charAt(0).toUpperCase()+e.slice(1);}
+function saudacao(){const h=new Date().getHours();return h<5?'Boa noite':h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';}
+function boasVindas(){const n=primeiroNome(bioUser);$('#helloTxt').textContent=saudacao()+(n?', '+n+'!':'!');$('#helloSub').textContent='Bem-vindo de volta à HS Recicla';const h=$('#hello');h.hidden=true;void h.offsetWidth;h.hidden=false;setTimeout(()=>{h.hidden=true;},2200);}
+async function bioRefresh(){const on=!!bioGet(),ok=await bioOk();$('#bioBtn').hidden=!ok;$('#bioBtn').textContent=on?'Desativar':'Ativar';$('#bioBtn').classList.toggle('btn-main',!on);
+  $('#bioTxt').textContent=!ok?'Este aparelho não tem rosto/digital disponível para apps da internet.':on?'Ativado neste aparelho: o app pede seu rosto ou digital ao abrir e depois de '+LOCK_MIN+' minutos fora dele.':'Quando ativar, o app só abre com o rosto ou a digital cadastrados neste celular, e te dá boas-vindas.';}
+function travar(){if(!bioUser||!bioGet())return;$('#lockHi').textContent='Olá'+(primeiroNome(bioUser)?', '+primeiroNome(bioUser):'');$('#lockMsg').textContent='';$('#lock').hidden=false;}
+async function destravar(){const id=bioGet();if(!id){$('#lock').hidden=true;return;}const m=$('#lockMsg');m.className='status';m.textContent='Olhe para o celular…';
+  try{await navigator.credentials.get({publicKey:{challenge:rnd(),allowCredentials:[{type:'public-key',id:b64u.from(id),transports:['internal']}],userVerification:'required',timeout:60000}});
+    $('#lock').hidden=true;m.textContent='';boasVindas();}
+  catch(e){m.className='status err';m.textContent=e&&e.name==='NotAllowedError'?'Não reconheceu ou foi cancelado. Toque em Desbloquear para tentar de novo.':'Não deu para desbloquear ('+(e&&e.name||'erro')+').';}}
+async function bioAtivar(){if(bioGet()){if(!confirm('Desativar o bloqueio com rosto neste aparelho?'))return;bioSet(null);bioRefresh();toast('Bloqueio desativado');return;}
+  try{const c=await navigator.credentials.create({publicKey:{challenge:rnd(),rp:{name:'Caixa HS Recicla'},user:{id:new TextEncoder().encode(bioUser.uid),name:bioUser.email||'usuario',displayName:primeiroNome(bioUser)||'Usuário'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},timeout:60000,attestation:'none'}});
+    bioSet(b64u.to(c.rawId));bioRefresh();toast('Bloqueio com rosto ativado');boasVindas();}
+  catch(e){toast(e&&e.name==='NotAllowedError'?'Cancelado':'Não deu para ativar ('+(e&&e.name||'erro')+')');}}
+$('#bioBtn').addEventListener('click',bioAtivar);$('#lockBtn').addEventListener('click',destravar);
+$('#lockSair').addEventListener('click',()=>{$('#lock').hidden=true;auth.signOut();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=Date.now();}else if(hiddenAt&&Date.now()-hiddenAt>LOCK_MIN*60000){travar();if(bioGet())destravar();}});
+auth.onAuthStateChanged(u=>{bioUser=u||null;if(!u){$('#lock').hidden=true;return;}bioRefresh();if(bioGet()){travar();destravar();}});
 
 const bootT=setTimeout(()=>{$('#bootTxt').textContent='Está demorando para conectar. Confira a internet e toque em Tentar de novo.';$('#bootReload').hidden=false;},12000);
 $('#bootReload').addEventListener('click',()=>location.reload());
