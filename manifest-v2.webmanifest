@@ -1,7 +1,7 @@
 {
   "id": "/hs-recicla/",
-  "name": "Caixa HS Recicla",
-  "short_name": "Caixa HS",
+  "name": "HS Recicla",
+  "short_name": "HS Recicla",
   "description": "Compras, vendas, gastos e lucro da HS Recicla",
   "start_url": "./",
   "scope": "./",
