@@ -768,7 +768,7 @@ function lucroReal(rs,ms){ // vendas − custo médio do que foi vendido − gas
 function cumChart(rs){
   const dim=new Date(mY,mM+1,0).getDate(); const isCur=mY===today.getFullYear()&&mM===today.getMonth();
   const last=isCur?today.getDate():(new Date(mY,mM,1)>today?0:dim);
-  const daily=Array(dim).fill(0); rs.forEach(r=>{const d=+(r.data||'').slice(8,10);if(d>=1&&d<=dim){const t=+r.total||0;daily[d-1]+=r.tipo==='venda'?t:-t;}});
+  const daily=Array(dim).fill(0); rs.forEach(r=>{const d=+(r.data||'').slice(8,10);if(d>=1&&d<=dim){const t=+r.total||0;daily[d-1]+=r.tipo==='venda'?t:(r.tipo==='compra'||r.tipo==='gasto'||r.tipo==='processo')?-t:(r.tipo==='mov'&&r.sub==='emp_out')?-(+r.juros||0):0;}});
   const cum=[];let a=0;for(let i=0;i<dim;i++){a+=daily[i];cum.push(a);}
   const real=cum.slice(0,last); const rate=last?real[last-1]/last:0; const proj=[];
   if(isCur&&last){for(let i=last-1;i<dim;i++)proj.push([i,real[last-1]+rate*(i-(last-1))]);}
