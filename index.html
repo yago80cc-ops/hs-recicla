@@ -36,7 +36,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:1
   padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
   padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 [hidden]{display:none!important}
-body.privado .wrap .big,body.privado .wrap .kpi .v,body.privado .wrap .num,body.privado .hbar .vl,body.privado .calc-out b,body.privado .chart svg text,body.privado .item .r b,body.privado #hReal b,body.privado .ins b,body.privado .mat b,body.privado #donut text,body.privado #projTxt,body.privado #hDelta,body.privado .rend .small,body.privado #ringTxt,body.privado .rend .small b{filter:blur(8px);user-select:none}
+body.privado .wrap .big,body.privado .wrap .kpi .v,body.privado .wrap .num,body.privado .hbar .vl,body.privado .calc-out b,body.privado .chart svg text,body.privado .item .r b,body.privado #hReal b,body.privado .ins b,body.privado .mat b,body.privado #donut text,body.privado #projTxt,body.privado #hDelta,body.privado .rend .small,body.privado #ringTxt,body.privado #cxHomeTot,body.privado #cxHomeSaldos b,body.privado .rend .small b{filter:blur(8px);user-select:none}
 /* novos blocos */
 .hub{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .hubi{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:16px;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
@@ -53,6 +53,7 @@ body.privado .wrap .big,body.privado .wrap .kpi .v,body.privado .wrap .num,body.
 .prow input,.prow select{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:9px;width:100%;min-width:0;font-size:15px}
 .prow button{height:40px;padding:0}
 @media (max-width:560px){.prow{grid-template-columns:76px minmax(0,1fr) minmax(0,1fr) 38px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px}.prow .pm{grid-column:1/-1}.prow.head{display:none}}
+.cxcard{border-color:color-mix(in srgb,var(--copper) 45%,var(--line));background:linear-gradient(160deg,var(--copper-glow),transparent 60%),var(--panel);color:var(--ink);font:inherit}
 .pessoa{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
 .pessoa summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center}
 .pessoa summary::-webkit-details-marker{display:none}
@@ -313,6 +314,11 @@ nav.tabs .fab svg{width:28px;height:28px}
 
   <!-- INÍCIO -->
   <section class="view" id="v-inicio">
+    <button type="button" class="card cxcard" id="cxHome" data-go="caixa" style="text-align:left;cursor:pointer">
+      <div class="row"><span class="lbl" style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700">Dinheiro no caixa agora</span><span class="link small">ver caixa ›</span></div>
+      <span class="big num" id="cxHomeTot" style="font-family:var(--f-num);font-size:clamp(26px,7vw,38px);font-weight:700">R$ 0,00</span>
+      <div class="saldos" id="cxHomeSaldos"></div>
+    </button>
     <div class="hero">
       <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
         <span class="lbl">Lucro do mês</span>
@@ -415,7 +421,7 @@ nav.tabs .fab svg{width:28px;height:28px}
       <button class="btn-main" id="mvSave" type="button">Salvar movimento</button>
       <div class="list" id="mvList"></div>
     </div>
-    <div class="card"><h2>Saldo inicial</h2><p class="small muted" style="margin:0">Quanto você tinha em cada lugar quando começou a usar o app. Só precisa preencher uma vez.</p><div class="g2" id="saldoIni"></div><button type="button" id="saldoSave">Salvar saldo inicial</button></div>
+    <div class="card"><h2>Acertar o caixa</h2><p class="small muted" style="margin:0">Conte quanto tem <b>agora</b> em dinheiro e no banco e coloque aqui. O app ajusta o caixa para bater com o real, sem mexer no lucro. Use sempre que o valor do app ficar diferente do que você tem.</p><div class="g2" id="saldoIni"></div><button type="button" class="btn-main" id="saldoSave">Acertar caixa</button></div>
   </section>
 
   <!-- PESSOAS -->
@@ -464,6 +470,7 @@ nav.tabs .fab svg{width:28px;height:28px}
       <div class="seg" id="recFmt"><button data-r="cupom" aria-pressed="true">Cupom (impressora térmica)</button><button data-r="a4" aria-pressed="false">Folha A4</button></div>
       <p class="small muted" style="margin:0">É um comprovante de compra/venda, não substitui nota fiscal.</p>
     </div>
+    <div class="card"><h2>Backup</h2><p class="small muted" style="margin:0">Baixa um arquivo com todos os lançamentos, preços, fornecedores e ajustes (as fotos não entram). Guarde no computador ou pendrive, de preferência uma vez por mês.</p><button type="button" class="btn-main" id="btnBackup">Baixar backup</button></div>
     <div class="card"><h2>Conta</h2><p class="small muted" style="margin:0" id="contaTxt"></p><button type="button" id="btnSair2">Sair desta conta</button></div>
   </section>
 </div>
@@ -535,7 +542,7 @@ nav.tabs .fab svg{width:28px;height:28px}
 </div>
 <div class="toast" id="toast"></div>
 <div class="snack" id="snack" hidden><span id="snackTxt"></span><button type="button" id="snackBtn">Imprimir recibo</button></div>
-<div id="recibo" hidden><div class="acts"><button type="button" class="btn-main" id="recPrint">Imprimir</button><button type="button" id="recShare">Mandar no WhatsApp</button><button type="button" id="recClose">Fechar</button></div><div class="paper" id="paper"></div></div>
+<div id="recibo" hidden><div class="acts"><button type="button" class="btn-main" id="recPrint">Imprimir</button><button type="button" id="recShare">Enviar imagem (WhatsApp)</button><button type="button" id="recClose">Fechar</button></div><div class="paper" id="paper"></div></div>
 <div id="fotoView" hidden><img id="fotoImg" alt="Foto do lançamento"><button type="button" class="btn-main" id="fotoClose">Fechar</button></div>
 <datalist id="dlMateriais"></datalist><datalist id="dlPessoas"></datalist>
 
@@ -579,7 +586,7 @@ $('#eye').addEventListener('click',()=>setPriv(!document.body.classList.contains
 let recFmt='cupom';try{recFmt=localStorage.getItem('recFmt')||'cupom';}catch(_){}
 function setRecFmt(f){recFmt=f;try{localStorage.setItem('recFmt',f);}catch(_){}$$('#recFmt button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.r===f));}
 setRecFmt(recFmt);$$('#recFmt button').forEach(b=>b.addEventListener('click',()=>setRecFmt(b.dataset.r)));
-let recText='';
+let recText='',recData=null;
 function abrirRecibo(base){
   if(!base||(base.tipo!=='compra'&&base.tipo!=='venda'))return;
   let itens=[base];
@@ -598,12 +605,34 @@ function abrirRecibo(base){
   <div class="sig">HS Recicla</div><div class="sig">${venda?'Cliente':'Fornecedor'}${base.pessoa?' — '+esc(base.pessoa):''}</div>
   <div class="c" style="margin-top:10px;font-size:10.5px">Documento sem valor fiscal</div>`;
   recText=`*HS RECICLA* — Comprovante de ${venda?'venda':'compra'} Nº ${nro}\n${dt} · ${venda?'Cliente':'Fornecedor'}: ${base.pessoa||'—'}\n\n`+itens.map(r=>`${r.material}: ${N(+r.qtd||0,2)} ${r.unidade||'kg'} × ${BRL(+r.preco||0)} = ${BRL(+r.total||0)}`).join('\n')+`\n\n*TOTAL: ${BRL(tot)}*\nHS Recicla Comércio de Sucatas Ltda — CNPJ 66.233.137/0001-02`;
+  recData={base,itens,tot,venda,nro,dt,hora};
   $('#recibo').hidden=false;$('#snack').hidden=true;
 }
 $('#recClose').addEventListener('click',()=>{$('#recibo').hidden=true;});
 $('#recPrint').addEventListener('click',()=>{try{window.print();}catch(_){toast('Não deu para abrir a impressão neste aparelho');}});
-$('#recShare').addEventListener('click',async()=>{try{if(navigator.share){await navigator.share({text:recText});return;}}catch(e){if(e&&e.name==='AbortError')return;}
-  window.open('https://wa.me/?text='+encodeURIComponent(recText),'_blank');});
+async function reciboPNG(){const R=recData;if(!R)return null;const W=720,P=40,mx=W-P;const c=document.createElement('canvas');const g=c.getContext('2d');
+  const mono=(w,sz)=>`${w} ${sz}px "JetBrains Mono",ui-monospace,Menlo,monospace`;const m2=v=>(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const logo=await new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src='logo-full.jpg';});
+  const draw=(dry)=>{let y=P;const T=(t,x,al,f,col)=>{if(!dry){g.font=f;g.fillStyle=col||'#111';g.textAlign=al;g.fillText(t,x,y);}};
+    const line=()=>{if(!dry){g.strokeStyle='#999';g.setLineDash([6,5]);g.beginPath();g.moveTo(P,y);g.lineTo(mx,y);g.stroke();g.setLineDash([]);}y+=28;};
+    if(logo){const lw=300,lh=logo.height*lw/logo.width;if(!dry){g.fillStyle='#000';g.beginPath();g.roundRect?g.roundRect((W-lw-24)/2,y-12,lw+24,lh+24,18):g.rect((W-lw-24)/2,y-12,lw+24,lh+24);g.fill();g.drawImage(logo,(W-lw)/2,y,lw,lh);}y+=lh+50;}
+    T('HS RECICLA COMÉRCIO DE SUCATAS LTDA',W/2,'center',mono(700,22));y+=30;T('CNPJ 66.233.137/0001-02 · WhatsApp (11) 98233-9941',W/2,'center',mono(400,17),'#444');y+=26;line();
+    T('COMPROVANTE DE '+(R.venda?'VENDA':'COMPRA'),W/2,'center',mono(700,28),'#000');y+=32;T('Nº '+R.nro+' · '+R.dt+' '+R.hora,W/2,'center',mono(400,19),'#444');y+=26;line();
+    T((R.venda?'Cliente: ':'Fornecedor: ')+(R.base.pessoa||'—'),P,'left',mono(700,21));y+=20;line();
+    R.itens.forEach(r=>{T(r.material||'',P,'left',mono(700,21));y+=28;T(N(+r.qtd||0,2)+' '+(r.unidade||'kg')+' x '+m2(r.preco),P,'left',mono(400,20),'#333');T(m2(r.total),mx,'right',mono(400,20),'#333');y+=34;});
+    line();T('TOTAL',P,'left',mono(700,30),'#000');T(BRL(R.tot),mx,'right',mono(700,30),'#000');y+=26;
+    const obs=R.itens.filter(r=>r.obs).map(r=>r.obs).join('; ');if(obs){y+=12;T('Obs.: '+obs.slice(0,60),P,'left',mono(400,17),'#444');y+=8;}
+    line();T(R.venda?'Material entregue e valor recebido conforme acima.':'Material recebido e valor pago conforme acima.',W/2,'center',mono(400,16),'#444');y+=26;
+    T('Documento sem valor fiscal',W/2,'center',mono(400,15),'#777');y+=P-10;return y;};
+  const H=draw(true);c.width=W;c.height=H;g.fillStyle='#fff';g.fillRect(0,0,W,H);draw(false);
+  return await new Promise(res=>c.toBlob(res,'image/png'));}
+$('#recShare').addEventListener('click',async()=>{const b=$('#recShare');b.disabled=true;
+  try{const blob=await reciboPNG();if(blob){const file=new File([blob],`recibo-hs-${recData.nro||'x'}.png`,{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});}catch(e){}return;}
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;document.body.appendChild(a);a.click();a.remove();toast('Imagem do recibo baixada. Anexe no WhatsApp.');return;}
+    if(navigator.share){await navigator.share({text:recText});return;}
+    window.open('https://wa.me/?text='+encodeURIComponent(recText),'_blank');}
+  catch(e){}finally{b.disabled=false;}});
 let snackT;function snackRecibo(txt,r){$('#snackTxt').textContent=txt;$('#snack').hidden=false;$('#snackBtn').onclick=()=>abrirRecibo(r);clearTimeout(snackT);snackT=setTimeout(()=>$('#snack').hidden=true,8000);}
 
 /* ---------- navegação ---------- */
@@ -804,7 +833,10 @@ function render(){
   $('#mLabel').textContent=MESC[mM]+' '+String(mY).slice(2);
   const rs=monthRows(mY,mM), s=sums(rs), ms=matStats();
   const pd=new Date(mY,mM-1,1), ps=sums(monthRows(pd.getFullYear(),pd.getMonth()));
-  if(view==='inicio'){
+  if(view==='inicio'){try{const sd=saldos();const tt=Object.values(sd).reduce((a,b)=>a+b,0);const pend=rows.filter(r=>r.pago===false);
+      const ar=pend.filter(r=>r.tipo==='venda').reduce((a,r)=>a+(+r.total||0),0),ap=pend.filter(r=>r.tipo!=='venda').reduce((a,r)=>a+(+r.total||0),0);
+      const el=$('#cxHomeTot');el.textContent=BRL(tt);el.classList.toggle('neg',tt<0);
+      $('#cxHomeSaldos').innerHTML=FORMAS.map(f=>`<span>${f}: <b class="${sd[f]<0?'neg':''}">${BRL(sd[f])}</b></span>`).join('')+(ar?`<span>a receber: <b class="pos">${BRL(ar)}</b></span>`:'')+(ap?`<span>a pagar: <b class="neg">${BRL(ap)}</b></span>`:'');}catch(_){}
     const hl=$('#hLucro');animate(hl,s.lucro);hl.className='big '+(s.lucro<0?'neg':'');
     const dl=$('#hDelta');
     if(ps.nv+ps.nc+ps.ng>0){const diff=s.lucro-ps.lucro;dl.className='pill '+(diff>=0?'up':'down');dl.textContent=(diff>=0?'▲ ':'▼ ')+BRLk(Math.abs(diff))+' vs '+MESC[pd.getMonth()];}else{dl.className='pill';dl.textContent='primeiro mês';}
@@ -953,13 +985,14 @@ function renderCaixa(){const s=saldos();const tot=Object.values(s).reduce((a,b)=
   const tab=FORMAS.map(f=>{const l=mv.filter(r=>(FORMAS.includes(r.forma)?r.forma:FORMAS[0])===f);const e=l.filter(isEnt).reduce((a,r)=>a+valMov(r),0),sa=l.filter(r=>!isEnt(r)).reduce((a,r)=>a+valMov(r),0);return `<tr><td>${f}</td><td class="num pos" style="text-align:right">${BRL(e)}</td><td class="num neg" style="text-align:right">${BRL(sa)}</td><td class="num" style="text-align:right"><b>${BRL(e-sa)}</b></td></tr>`;}).join('');
   $('#cxDiaBox').innerHTML=mv.length?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr class="small muted"><th style="text-align:left">Onde</th><th style="text-align:right">Entrou</th><th style="text-align:right">Saiu</th><th style="text-align:right">Resultado</th></tr></thead><tbody>${tab}</tbody></table></div><p class="small muted" style="margin:6px 0 0">${mv.length} movimentações nesse dia (o que é fiado só entra no dia em que for pago).</p>`:'<div class="empty">Nenhum dinheiro entrou ou saiu nesse dia.</div>';
   listInto($('#mvList'),rows.filter(r=>r.tipo==='mov').sort(sortDesc).slice(0,15),true);
-  const si=cfg.geral.saldoIni||{};FORMAS.forEach((f,i)=>{const el=$('#si'+i);if(document.activeElement!==el&&si[f]!=null)el.value=si[f];});}
+  FORMAS.forEach((f,i)=>{const el=$('#si'+i);if(document.activeElement!==el&&!el.dataset.ed)el.value=(Math.round(s[f]*100)/100)||'';});}
 $('#cxDia').addEventListener('change',renderCaixa);
 $('#mvTipo').addEventListener('change',()=>{$('#boxJuros').hidden=$('#mvTipo').value!=='emp_out';});
 $('#mvSave').addEventListener('click',async()=>{if(!col)return;const v=num('#mvValor');if(!(v>0)){toast('Informe o valor');return;}
   const d={tipo:'mov',sub:$('#mvTipo').value,valor:v,forma:$('#mvForma').value,data:$('#mvData').value||ymd(today),obs:$('#mvObs').value.trim(),criadoEm:new Date().toISOString()};
   if(d.sub==='emp_out'&&num('#mvJuros')>0)d.juros=num('#mvJuros');col.doc().set(d).catch(()=>toast('Erro ao salvar'));['#mvValor','#mvJuros','#mvObs'].forEach(i=>$(i).value='');toast('Movimento salvo');});
-$('#saldoSave').addEventListener('click',async()=>{if(!cfgRef)return;const o={};FORMAS.forEach((f,i)=>o[f]=num('#si'+i));try{await cfgRef.set({saldoIni:o},{merge:true});toast('Saldo inicial salvo');}catch(e){toast('Não deu para salvar');}});
+FORMAS.forEach((f,i)=>$('#si'+i).addEventListener('input',e=>e.target.dataset.ed='1'));
+$('#saldoSave').addEventListener('click',async()=>{if(!cfgRef)return;const cur=saldos(),ini=cfg.geral.saldoIni||{},o={};FORMAS.forEach((f,i)=>{o[f]=Math.round(((+ini[f]||0)+num('#si'+i)-cur[f])*100)/100;delete $('#si'+i).dataset.ed;});try{await cfgRef.set({saldoIni:o},{merge:true});toast('Caixa acertado');}catch(e){toast('Não deu para salvar');}});
 async function marcarPago(id,b){const r=rows.find(x=>x._id===id);if(!r||!col)return;
   if(!b.classList.contains('confirm')){b.classList.add('confirm');b.textContent='Confirmar hoje';setTimeout(()=>{if(b.isConnected){b.classList.remove('confirm');b.textContent=r.tipo==='venda'?'Recebi':'Paguei';}},4000);return;}
   col.doc(id).update({pago:true,pagoEm:ymd(today)}).catch(()=>toast('Não deu para marcar'));toast(r.tipo==='venda'?'Recebimento registrado':'Pagamento registrado');}
@@ -1039,6 +1072,8 @@ $('#repPdf').addEventListener('click',()=>{const rs=repRows(),s=sums(rs);const P
   <div class="hr"></div><div class="c" style="font-size:11px">Gerado pelo app Caixa HS Recicla em ${new Date().toLocaleDateString('pt-BR')} · relatório gerencial, sem valor fiscal</div>`;
   recText=`Relatório HS Recicla ${MES[mM]}/${mY}: vendas ${BRL(s.venda)}, compras ${BRL(s.compra)}, gastos ${BRL(s.gasto)}, resultado ${BRL(s.lucro)}`;$('#recibo').hidden=false;});
 
+$('#btnBackup').addEventListener('click',()=>{const data={app:'Caixa HS Recicla',geradoEm:new Date().toISOString(),lancamentos:rows.map(r=>Object.assign({},r)),config:cfg};
+  const blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-hs-recicla-'+ymd(today)+'.json';document.body.appendChild(a);a.click();a.remove();toast('Backup baixado: '+rows.length+' lançamentos');});
 $('#btnEstAdd').addEventListener('click',()=>{setTipo('estoque');openSheet();});
 setTipo('compra'); go('inicio');
 
