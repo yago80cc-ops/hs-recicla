@@ -361,7 +361,7 @@ nav.tabs .fab svg{width:28px;height:28px}
   <!-- MATERIAIS -->
   <section class="view" id="v-materiais" hidden>
     <div class="hero" style="grid-template-columns:minmax(0,1fr)">
-      <div style="display:flex;flex-direction:column;gap:6px"><span class="lbl">Material parado no pátio</span><span class="big" id="mParado">R$ 0,00</span><span class="small muted">Tudo que entrou e ainda não saiu, ao preço médio que você pagou.</span><div class="seg"><button type="button" id="btnEstAdd" class="btn-main" style="padding:10px 16px;font-size:15px">+ Colocar material no estoque</button></div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><span class="lbl">Material no pátio (valor de venda)</span><span class="big" id="mParado">R$ 0,00</span><span class="small muted" id="mParadoSub">Quanto vale o que está no pátio, vendendo nos preços da tabela.</span><div class="seg"><button type="button" id="btnEstAdd" class="btn-main" style="padding:10px 16px;font-size:15px">+ Colocar material no estoque</button></div></div>
     </div>
     <div class="card col-a">
       <h2>Calculadora de negociação</h2>
@@ -932,7 +932,7 @@ function insights(rs,s,ps,ms,pr){
   const worst=Object.entries(mm).sort((a,b)=>a[1]-b[1])[0];
   if(worst&&worst[1]<0)add('!','var(--bad)',`Você está <b>perdendo dinheiro</b> em ${esc(ms[worst[0]].name)}: vendeu abaixo do que pagou (${BRL(worst[1])}).`);
   if(ps.venda>0&&s.venda>0&&pr.isCur&&pr.last>=5){const ritmo=s.venda/pr.last*pr.dim;const d=(ritmo-ps.venda)/ps.venda*100;add(d>=0?'↑':'↓',d>=0?'var(--good)':'var(--warn)',`No ritmo de agora, as vendas do mês ficam <b>${N(Math.abs(d),0)}% ${d>=0?'acima':'abaixo'}</b> do mês passado.`);}
-  const parado=Object.values(ms).reduce((a,o)=>a+o.parado,0);if(parado>0){const top=Object.values(ms).sort((a,b)=>b.parado-a.parado)[0];add('◆','var(--copper)',`Tem <b>${BRL(parado)}</b> em material parado no pátio. O maior é <b>${esc(top.name)}</b> (${N(top.est)} ${top.un}).`);}
+  {const ev=Object.values(ms).filter(o=>o.est>0.004).map(o=>({o,v:o.est*(+precoTabela(o.name,o.un,'venda')||0)}));const vale=ev.reduce((a,x)=>a+x.v,0);if(vale>0){const top=ev.sort((a,b)=>b.v-a.v)[0].o;add('◆','var(--copper)',`Tem <b>${BRL(vale)}</b> em material no pátio, no preço de venda. O maior é <b>${esc(top.name)}</b> (${N(top.est)} ${top.un}).`);}}
   // fornecedor mais caro por material
   const sup={};rs.filter(r=>r.tipo==='compra'&&r.pessoa).forEach(r=>{const k=(r.material||'').trim().toLowerCase()+'|'+(r.unidade||'kg');(sup[k]=sup[k]||{})[r.pessoa]=(sup[k][r.pessoa]||[]).concat(+r.preco||0);});
   for(const [k,p] of Object.entries(sup)){const avg=Object.entries(p).map(([n,a])=>[n,a.reduce((x,y)=>x+y,0)/a.length]);if(avg.length>1){avg.sort((a,b)=>b[1]-a[1]);const dif=avg[0][1]-avg[avg.length-1][1];if(dif>0){add('$','var(--blue)',`Em ${esc(ms[k]?ms[k].name:k.split('|')[0])}, você paga <b>${BRL(dif)}</b> a mais por ${k.split('|')[1]} para ${esc(avg[0][0])} do que para ${esc(avg[avg.length-1][0])}.`);break;}}}
@@ -976,12 +976,13 @@ function renderRend(ms){const list=Object.keys(ms._rend).map(k=>rendOf(ms,k)).fi
     ${pc&&R.pesoPc?`<span class="small muted">Cada peça pesa em média ${N(R.pesoPc,2)} kg.</span>`:''}
     ${R.valKg?`<span class="small">Cada ${pc?'peça':'kg'} sujo rende <b class="num">${BRL(R.valKg)}</b> em material limpo, nos seus preços de venda.</span>`:''}</div>`;}).join(''):'<div class="empty">Quando você registrar uma <b>Limpeza</b> (botão + → Limpeza), aqui aparece quanto cada material sujo rende de cobre, ferro etc. e quanto se perde.</div>';}
 function renderMat(rs,ms){renderRend(ms);
-  const est=Object.values(ms).filter(o=>o.est>0.004).sort((a,b)=>b.parado-a.parado);
-  $('#estTab').innerHTML=est.length?est.map(o=>`<div class="item"><div class="dot estoque">${esc(o.name.slice(0,1).toUpperCase())}</div><div style="min-width:0"><div class="t">${esc(o.name)}</div><div class="s">${o.pc?'custo médio '+BRL(o.pc)+'/'+esc(o.un):'sem custo informado'}</div></div><div class="r"><b>${N(o.est)} ${esc(o.un)}</b><div class="small muted num">${o.parado?BRL(o.parado):''}</div></div></div>`).join(''):'<div class="empty">Nada no estoque ainda. Use <b>+ Colocar material no estoque</b> para lançar o que já está no pátio.</div>';
-  const all=Object.values(ms);$('#mParado').textContent=BRL(all.reduce((a,o)=>a+o.parado,0));
+  const pvT=o=>+precoTabela(o.name,o.un,'venda')||0;
+  const est=Object.values(ms).filter(o=>o.est>0.004).map(o=>Object.assign(o,{pvt:pvT(o),vale:o.est*pvT(o)})).sort((a,b)=>b.vale-a.vale||b.est-a.est);
+  $('#estTab').innerHTML=est.length?est.map(o=>`<div class="item"><div class="dot estoque">${esc(o.name.slice(0,1).toUpperCase())}</div><div style="min-width:0"><div class="t">${esc(o.name)}</div><div class="s">${o.pvt?'vende a '+BRL(o.pvt)+'/'+esc(o.un):'sem preço de venda'}</div></div><div class="r"><b>${N(o.est)} ${esc(o.un)}</b><div class="small muted num">${o.vale?BRL(o.vale):''}</div></div></div>`).join(''):'<div class="empty">Nada no estoque ainda. Use <b>+ Colocar material no estoque</b> para lançar o que já está no pátio.</div>';
+  $('#mParado').textContent=BRL(est.reduce((a,o)=>a+o.vale,0));const semP=est.filter(o=>!o.pvt).map(o=>o.name);$('#mParadoSub').textContent='Quanto vale o que está no pátio, vendendo nos preços da tabela.'+(semP.length?' Sem preço de venda: '+semP.join(', ')+'.':'');
   const lm={};rs.filter(r=>r.tipo==='venda').forEach(r=>{const k=(r.material||'—').trim().toLowerCase()+'|'+(r.unidade||'kg');const o=ms[k];if(!o)return;lm[k]=(lm[k]||0)+(+r.qtd||0)*((+r.preco||0)-(o.pc||0));});
   hbars($('#rankMat'),Object.entries(lm).map(([k,v])=>({n:ms[k].name,v,sub:ms[k].pc?N((ms[k].pv-ms[k].pc)/ms[k].pc*100,0)+'%':''})).sort((a,b)=>b.v-a.v).slice(0,8),'var(--good)',BRL);
-  const mc=all.filter(o=>o.inQ||o.vq||o.semQ||o.ajQ).sort((a,b)=>(b.cv+b.vv)-(a.cv+a.vv));
+  const all=Object.values(ms);const mc=all.filter(o=>o.inQ||o.vq||o.semQ||o.ajQ).sort((a,b)=>(b.cv+b.vv)-(a.cv+a.vv));
   $('#matCards').innerHTML=mc.length?mc.map(o=>{const mg=o.pc&&o.pv?(o.pv-o.pc):null;return `<div class="mat"><h3>${esc(o.name)}</h3>
     <div><span>Pago (média)</span><b>${o.pc?BRL(o.pc):'—'}</b></div><div><span>Vendido (média)</span><b>${o.pv?BRL(o.pv):'—'}</b></div>
     ${o.prodQ?`<div><span>Veio da limpeza</span><b>${N(o.prodQ)} ${o.un}</b></div><div><span>Usado na limpeza</span><b>${o.outQ?N(o.outQ)+' '+o.un:'—'}</b></div>`:o.outQ?`<div><span>Mandado p/ limpeza</span><b>${N(o.outQ)} ${o.un}</b></div><div></div>`:''}<div><span>Margem / ${o.un}</span><b class="${mg==null?'':mg>=0?'pos':'neg'}">${mg==null?'—':BRL(mg)+' ('+N(mg/o.pc*100,0)+'%)'}</b></div><div><span>No pátio</span><b>${o.est?N(o.est)+' '+o.un:'—'}</b></div></div>`;}).join(''):'<div class="empty">As fichas aparecem quando você lançar compras e vendas.</div>';
