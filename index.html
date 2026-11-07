@@ -799,10 +799,11 @@ function custoMap(){if(_cvR===rows&&_cvC)return _cvC;if(_msR!==rows||!_msC){_msC
 function custoVenda(r,ms){const m=custoMap();if(r._id&&r._id in m&&m[r._id]!=null)return m[r._id];
   const k=(r.material||'—').trim().toLowerCase()+'|'+(r.unidade||'kg'),q=+r.qtd||0,o=ms[k];if(o&&o.pc)return q*o.pc;
   const ult=rows.filter(x=>x.tipo==='compra'&&(x.material||'').trim().toLowerCase()+'|'+(x.unidade||'kg')===k&&+x.preco>0).sort(sortDesc)[0];return ult?q*(+ult.preco):null;}
-function sums(rs){const ms=msAll();const s={venda:0,compra:0,gasto:0,cmv:0,semCusto:0,semMat:{},nv:0,nc:0,ng:0};rs.forEach(r=>{const t=+r.total||0;
+const CORTE='2026-12-01';const antigo=r=>(r.data||'')<CORTE; // até nov/26 o lucro segue a conta antiga (vendas − compras − gastos)
+function sums(rs){const ms=msAll();const s={venda:0,compra:0,gasto:0,cmv:0,semCusto:0,semMat:{},nv:0,nc:0,ng:0,compraAnt:0,cmvNovo:0,antigo:false};rs.forEach(r=>{const t=+r.total||0;if(antigo(r)){s.antigo=true;if(r.tipo==='compra')s.compraAnt+=t;}else if(r.tipo==='venda'){const c=custoVenda(r,ms);s.cmvNovo+=c==null?t:c;}
   if(r.tipo==='venda'){s.venda+=t;s.nv++;const c=custoVenda(r,ms);if(c==null){s.cmv+=t;s.semCusto+=t;s.semMat[(r.material||'—').trim()]=1;}else s.cmv+=c;}
   else if(r.tipo==='compra'){s.compra+=t;s.nc++;}else if(r.tipo==='gasto'||(r.tipo==='processo'&&t>0)){s.gasto+=t;s.ng++;}else if(r.tipo==='mov'&&r.sub==='emp_out'&&+r.juros>0){s.gasto+=+r.juros;s.ng++;}});
-  s.lucro=s.venda-s.cmv-s.gasto;return s;}
+  s.lucro=s.venda-s.cmvNovo-s.compraAnt-s.gasto;return s;}
 function matStats(){const m={},rend={};
   const get=(name,un)=>{name=(name||'—').trim();const id=name.toLowerCase()+'|'+(un||'kg');return m[id]||(m[id]={name,un:un||'kg',cq:0,cv:0,vq:0,vv:0,inQ:0,inV:0,outQ:0,prodQ:0,semQ:0,ajQ:0});};
   rows.forEach(r=>{if(r.tipo==='compra'){const o=get(r.material,r.unidade);o.cq+=+r.qtd||0;o.cv+=+r.total||0;o.inQ+=+r.qtd||0;o.inV+=+r.total||0;}
@@ -828,7 +829,7 @@ function lucroReal(rs,ms){ // vendas − custo médio do que foi vendido − gas
 function cumChart(rs){
   const dim=new Date(mY,mM+1,0).getDate(); const isCur=mY===today.getFullYear()&&mM===today.getMonth();
   const last=isCur?today.getDate():(new Date(mY,mM,1)>today?0:dim);
-  const daily=Array(dim).fill(0); rs.forEach(r=>{const d=+(r.data||'').slice(8,10);if(d>=1&&d<=dim){const t=+r.total||0;if(r.tipo==='venda'){const c=custoVenda(r,msAll());daily[d-1]+=t-(c==null?t:c);}else daily[d-1]+=(r.tipo==='gasto'||r.tipo==='processo')?-t:(r.tipo==='mov'&&r.sub==='emp_out')?-(+r.juros||0):0;}});
+  const daily=Array(dim).fill(0); rs.forEach(r=>{const d=+(r.data||'').slice(8,10);if(d>=1&&d<=dim){const t=+r.total||0;if(r.tipo==='venda'){const c=antigo(r)?0:custoVenda(r,msAll());daily[d-1]+=t-(c==null?t:c);}else if(r.tipo==='compra'&&antigo(r))daily[d-1]-=t;else daily[d-1]+=(r.tipo==='gasto'||r.tipo==='processo')?-t:(r.tipo==='mov'&&r.sub==='emp_out')?-(+r.juros||0):0;}});
   const cum=[];let a=0;for(let i=0;i<dim;i++){a+=daily[i];cum.push(a);}
   const real=cum.slice(0,last); const rate=last?real[last-1]/last:0; const proj=[];
   if(isCur&&last){for(let i=last-1;i<dim;i++)proj.push([i,real[last-1]+rate*(i-(last-1))]);}
@@ -901,7 +902,7 @@ function render(){
     const dl=$('#hDelta');
     if(ps.nv+ps.nc+ps.ng>0){const diff=s.lucro-ps.lucro;dl.className='pill '+(diff>=0?'up':'down');dl.textContent=(diff>=0?'▲ ':'▼ ')+BRLk(Math.abs(diff))+' vs '+MESC[pd.getMonth()];}else{dl.className='pill';dl.textContent='primeiro mês';}
     $('#hMargem').textContent=s.venda>0?'margem '+N(s.lucro/s.venda*100,0)+'%':'margem —';
-    $('#hReal').innerHTML=(s.nv?'Faturamento '+BRL(s.venda)+' − custo do material vendido '+BRL(s.cmv)+' − gastos '+BRL(s.gasto)+'. Compra não diminui o lucro: vira estoque.':'Compra não diminui o lucro: vira estoque. O lucro aparece quando você vende.')
+    $('#hReal').innerHTML=s.antigo?'Lucro deste mês na conta antiga: vendas − compras − gastos. A partir de dezembro o lucro desconta só o custo do material vendido.':(s.nv?'Faturamento '+BRL(s.venda)+' − custo do material vendido '+BRL(s.cmv)+' − gastos '+BRL(s.gasto)+'. Compra não diminui o lucro: vira estoque.':'Compra não diminui o lucro: vira estoque. O lucro aparece quando você vende.')
       +(s.semCusto?'<br><b style="color:var(--warn)">Atenção:</b> '+BRL(s.semCusto)+' em vendas de <b>'+esc(Object.keys(s.semMat).join(', '))+'</b> sem custo conhecido. Contei como lucro zero. Lance o estoque com o preço que pagou em Materiais → Ajustar estoque.':'');
     $('#kV').textContent=BRL(s.venda);$('#kVn').textContent=s.nv+(s.nv===1?' venda':' vendas');
     $('#kC').textContent=BRL(s.compra);$('#kCn').textContent=s.nc+(s.nc===1?' compra':' compras');
@@ -1136,7 +1137,7 @@ $('#repPdf').addEventListener('click',()=>{const rs=repRows(),s=sums(rs);const P
   const dt=d=>(d||'').split('-').reverse().join('/');const m=v=>(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   P.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>HS RECICLA COMÉRCIO DE SUCATAS LTDA</b><br>CNPJ 66.233.137/0001-02</div><img src="logo-print.png" alt="" style="width:120px;filter:grayscale(1) contrast(1.6)"></div>
   <div class="hr"></div><b style="font-size:16px">Relatório de ${MES[mM]} de ${mY}</b>
-  <table style="margin-top:8px"><tr><td>Faturamento (vendas)</td><td class="r">R$ ${m(s.venda)}</td></tr><tr><td>(−) Custo do material vendido</td><td class="r">R$ ${m(s.cmv)}</td></tr><tr><td>(−) Gastos (inclui juros e limpeza)</td><td class="r">R$ ${m(s.gasto)}</td></tr><tr><td><b>Lucro</b></td><td class="r"><b>R$ ${m(s.lucro)}</b></td></tr><tr><td class="muted">Compras do mês (foram para o estoque)</td><td class="r muted">R$ ${m(s.compra)}</td></tr></table>
+  <table style="margin-top:8px"><tr><td>Faturamento (vendas)</td><td class="r">R$ ${m(s.venda)}</td></tr>${s.antigo?`<tr><td>(−) Compras de material</td><td class="r">R$ ${m(s.compraAnt)}</td></tr>`:`<tr><td>(−) Custo do material vendido</td><td class="r">R$ ${m(s.cmv)}</td></tr>`}<tr><td>(−) Gastos (inclui juros e limpeza)</td><td class="r">R$ ${m(s.gasto)}</td></tr><tr><td><b>Lucro</b></td><td class="r"><b>R$ ${m(s.lucro)}</b></td></tr><tr><td class="muted">Compras do mês (foram para o estoque)</td><td class="r muted">R$ ${m(s.compra)}</td></tr></table>
   ${tb('venda',[['Data'],['Cliente'],['Material'],['Qtd',1],['Total',1]],r=>`<tr><td>${dt(r.data)}</td><td>${esc(r.pessoa||'')}</td><td>${esc(r.material)}</td><td class="r">${N(r.qtd,2)} ${esc(r.unidade||'kg')}</td><td class="r">${m(r.total)}${r.pago===false?' (fiado)':''}</td></tr>`)}
   ${tb('compra',[['Data'],['Fornecedor'],['Material'],['Qtd',1],['Total',1]],r=>`<tr><td>${dt(r.data)}</td><td>${esc(r.pessoa||'')}</td><td>${esc(r.material)}</td><td class="r">${N(r.qtd,2)} ${esc(r.unidade||'kg')}</td><td class="r">${m(r.total)}${r.pago===false?' (fiado)':''}</td></tr>`)}
   ${tb('gasto',[['Data'],['Categoria'],['Pago a'],['Total',1]],r=>`<tr><td>${dt(r.data)}</td><td>${esc(r.categoria)}</td><td>${esc(r.pessoa||'')}</td><td class="r">${m(r.total)}</td></tr>`)}
