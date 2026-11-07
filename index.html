@@ -925,7 +925,7 @@ function insights(rs,s,ps,ms,pr){
   const out=[];const add=(ic,col,html)=>out.push(`<div class="ins"><div class="ic" style="background:color-mix(in srgb,${col} 18%,transparent);color:${col}">${ic}</div><p>${html}</p></div>`);
   if(!rows.length){$('#insights').innerHTML='<div class="empty">Toque no <b>+</b> lá embaixo para lançar a primeira compra. Aqui vão aparecer dicas sobre seus números: melhor material, fornecedor mais caro, se o mês vai bater a meta…</div>';return;}
   // melhor material (margem por unidade × qtd vendida no mês)
-  const mm={};rs.filter(r=>r.tipo==='venda').forEach(r=>{const k=(r.material||'—').trim().toLowerCase()+'|'+(r.unidade||'kg');const o=ms[k];if(!o||!o.pc)return;mm[k]=(mm[k]||0)+(+r.qtd||0)*((+r.preco||0)-o.pc);});
+  const mm={};rs.filter(r=>r.tipo==='venda').forEach(r=>{const k=(r.material||'—').trim().toLowerCase()+'|'+(r.unidade||'kg');const o=ms[k];const c=custoVenda(r,ms);if(!o||c==null)return;mm[k]=(mm[k]||0)+(+r.total||0)-c;});
   const best=Object.entries(mm).sort((a,b)=>b[1]-a[1])[0];
   if(best&&best[1]>0)add('★','var(--good)',`<b>${esc(ms[best[0]].name)}</b> é o que mais deu lucro no mês: <b class="pos">${BRL(best[1])}</b>.`);
   const worst=Object.entries(mm).sort((a,b)=>a[1]-b[1])[0];
