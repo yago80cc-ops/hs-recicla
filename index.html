@@ -52,6 +52,7 @@ body.privado .wrap .big,body.privado .wrap .kpi .v,body.privado .wrap .num,body.
 .prow{display:grid;grid-template-columns:minmax(0,1.6fr) 74px minmax(0,1fr) minmax(0,1fr) 38px;gap:6px;align-items:end}
 .prow input,.prow select{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:9px;width:100%;min-width:0;font-size:15px}
 .prow button{height:40px;padding:0}
+.rprow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 38px;gap:6px;align-items:end;padding-bottom:8px;border-bottom:1px dashed var(--line)}.rprow .rm{grid-column:1/-1}.rprow input{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:9px;width:100%;min-width:0;font-size:15px}.rprow button{height:40px;padding:0}.rprow .lb{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted)}.rprow label{font-size:11px;color:var(--muted)}
 @media (max-width:560px){.prow{grid-template-columns:76px minmax(0,1fr) minmax(0,1fr) 38px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px}.prow .pm{grid-column:1/-1}.prow.head{display:none}}
 .cxcard{border-color:color-mix(in srgb,var(--copper) 45%,var(--line));background:linear-gradient(160deg,var(--copper-glow),transparent 60%),var(--panel);color:var(--ink);font:inherit}
 .pessoa{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
@@ -343,8 +344,8 @@ nav.tabs .fab svg{width:28px;height:28px}
       <div class="spark" id="spark"></div>
     </div>
     <div class="kpis">
-      <div class="kpi"><label><i style="background:var(--good)"></i>Vendas</label><span class="v" id="kV">R$ 0</span><span class="small muted" id="kVn"></span></div>
-      <div class="kpi"><label><i style="background:var(--buy)"></i>Compras</label><span class="v" id="kC">R$ 0</span><span class="small muted" id="kCn"></span></div>
+      <div class="kpi"><label><i style="background:var(--good)"></i>Faturamento</label><span class="v" id="kV">R$ 0</span><span class="small muted" id="kVn"></span></div>
+      <div class="kpi"><label><i style="background:var(--buy)"></i>Compras (estoque)</label><span class="v" id="kC">R$ 0</span><span class="small muted" id="kCn"></span></div>
       <div class="kpi"><label><i style="background:var(--warn)"></i>Gastos</label><span class="v" id="kG">R$ 0</span><span class="small muted" id="kGn"></span></div>
     </div>
     <div class="card col-a">
@@ -375,6 +376,9 @@ nav.tabs .fab svg{width:28px;height:28px}
       <div class="calc-out"><div><span>Pague até</span><b id="cMax">R$ 0,00</b></div><div style="text-align:right"><span id="cLabel">Lucro no lote</span><b id="cLucro">R$ 0,00</b></div></div>
       <p class="small muted" style="margin:0" id="cHint"></p>
     </div>
+    <div class="card col-b"><h2>Rendimento padrão</h2><p class="small muted" style="margin:0">Quanto cada peça rende. Quando você lançar a <b>compra</b> de um desses, o app já transforma em cobre e ferro no estoque e mostra o lucro previsto. Ferro em branco = o resto do peso.</p>
+      <div id="rpRows" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div class="seg"><button type="button" id="rpAdd">+ Linha</button><button type="button" id="rpSave" class="btn-main">Salvar rendimentos</button></div></div>
     <div class="card col-b"><h2>Rendimento da limpeza</h2><div id="rendBox" style="display:flex;flex-direction:column;gap:10px"></div></div>
     <div class="card"><div class="row"><h2>Quem mais dá lucro</h2><span class="small muted">no mês</span></div><div id="rankMat" style="display:flex;flex-direction:column;gap:10px"></div></div>
     <div class="card"><div class="row"><h2>Estoque no pátio</h2><span class="small muted">quantidade hoje</span></div><div id="estTab" class="list"></div></div>
@@ -386,7 +390,7 @@ nav.tabs .fab svg{width:28px;height:28px}
     <div class="card"><h2>Relatório do mês para o contador</h2><p class="small muted" style="margin:0">Tudo do mês selecionado no topo: resumo, compras, vendas, gastos e limpezas.</p>
       <div class="seg"><button type="button" id="repCsv">Baixar planilha (Excel)</button><button type="button" id="repPdf">Gerar PDF / imprimir</button></div></div>
     <div class="card"><div class="row"><h2>Últimos 6 meses</h2></div><div class="chart" id="sixChart"></div>
-      <div class="legend"><span><i style="background:var(--good)"></i>Vendas</span><span><i style="background:var(--buy)"></i>Compras + gastos</span><span><i style="background:var(--blue)"></i>Lucro</span></div></div>
+      <div class="legend"><span><i style="background:var(--good)"></i>Vendas</span><span><i style="background:var(--buy)"></i>Custo do vendido + gastos</span><span><i style="background:var(--blue)"></i>Lucro</span></div></div>
     <div class="grid2">
       <div class="card"><h2>Para onde vai o gasto</h2><div id="donut"></div></div>
       <div class="card"><h2>Fornecedores e compradores</h2><div id="people" style="display:flex;flex-direction:column;gap:12px"></div></div>
@@ -522,7 +526,7 @@ nav.tabs .fab svg{width:28px;height:28px}
       <div class="f"><label for="fUn">Unid.</label><select id="fUn"><option value="kg">kg</option><option value="pç">peça</option></select></div>
     </div>
     <div id="boxCategoria" class="f" hidden><label for="fCat">Categoria</label>
-      <select id="fCat"><option>Combustível</option><option>Frete / caminhão</option><option>Funcionário / diária</option><option>Aluguel / pátio</option><option>Juros de empréstimo</option><option>Manutenção</option><option>Anúncios</option><option>Retirada / pró-labore</option><option>Outros</option></select></div>
+      <select id="fCat"><option>Combustível</option><option>Frete / caminhão</option><option>Funcionário / diária</option><option>Aluguel / pátio</option><option>Juros de empréstimo</option><option>Manutenção</option><option>Anúncios</option><option>EPI / segurança</option><option>Internet / telefone</option><option>Taxas bancárias / Pix</option><option>Retirada / pró-labore</option><option>Outros</option></select></div>
     <div id="boxProc" hidden style="display:flex;flex-direction:column;gap:10px">
       <p class="small muted" style="margin:0">Registre o que entrou sujo e o que saiu depois de limpo. O app calcula a perda e o rendimento.</p>
       <div class="g3">
@@ -534,7 +538,7 @@ nav.tabs .fab svg{width:28px;height:28px}
       <div class="f"><label>Saiu limpo</label></div>
       <div id="saidas" style="display:flex;flex-direction:column;gap:8px"></div>
       <div class="chips" id="saiChips"><button type="button" data-n="Cobre">+ Cobre</button><button type="button" data-n="Ferro">+ Ferro</button><button type="button" data-n="Alumínio">+ Alumínio</button><button type="button" data-n="Latão">+ Latão</button><button type="button" data-n="Plástico">+ Plástico</button><button type="button" data-n="">+ Outro</button></div>
-      <div class="perda"><span>Perda (terra, sujeira, peso morto)</span><b class="num" id="pPerda">0 kg</b></div>
+      <div class="perda"><span>Perda (terra, sujeira, peso morto)</span><b class="num" id="pPerda">0 kg</b></div><button type="button" class="link small" id="btnRestoFerro" style="align-self:flex-start">O resto é ferro (preencher automático)</button>
       <div class="f"><label for="fCusto">Custo da limpeza (R$, opcional)</label><input id="fCusto" type="number" inputmode="decimal" step="any" min="0" placeholder="Mão de obra, disco, energia…"></div>
     </div>
     <div class="g2">
@@ -581,7 +585,7 @@ const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('show');clea
 let rows=[], meta=0, tipo='compra', filtro='todos', view='inicio';
 let mY=today.getFullYear(), mM=today.getMonth();
 let col=null, cfgRef=null, fotosCol=null, cfgCol=null, isOwner=true, editing=null, fotoData=null;
-let cfg={geral:{},precos:{itens:[]},pessoas:{map:{}},equipe:{emails:[]}};
+let cfg={geral:{},precos:{itens:[]},rend:{itens:[]},pessoas:{map:{}},equipe:{emails:[]}};
 const DONO='yago80cc@gmail.com', FORMAS=['Dinheiro','Banco/PIX'];
 
 /* ---------- tema ---------- */
@@ -687,6 +691,10 @@ $$('#saiChips button').forEach(b=>b.addEventListener('click',()=>{const d=addSai
 ['#fEntQ','#fCusto','#fEntPeso'].forEach(id=>$(id).addEventListener('input',()=>calcTotal()));
 $('#fEntUn').addEventListener('change',()=>{const pc=$('#fEntUn').value==='pç';$('#boxEntPeso').hidden=!pc;$('#lEntQ').textContent=pc?'Quantas peças':'Peso (kg)';calcTotal();});
 const entPeso=()=>$('#fEntUn').value==='kg'?num('#fEntQ'):num('#fEntPeso');
+$('#btnRestoFerro').addEventListener('click',()=>{const ent=entPeso();if(!ent){toast('Coloque primeiro o peso que entrou');return;}
+  const rowsS=$$('#saidas .sai');let fe=rowsS.find(d=>d.querySelector('.sN').value.trim().toLowerCase()==='ferro');
+  const outros=rowsS.filter(d=>d!==fe).reduce((a,d)=>a+(parseFloat(String(d.querySelector('.sQ').value).replace(',','.'))||0),0);
+  const resto=Math.round((ent-outros)*100)/100;if(resto<=0){toast('Não sobrou peso para o ferro');return;}if(!fe)fe=addSaida('Ferro');fe.querySelector('.sQ').value=resto;calcTotal();toast(N(resto)+' kg de ferro');});
 const saidasVal=()=>$$('#saidas .sai').map(d=>({material:d.querySelector('.sN').value.trim(),qtd:parseFloat(String(d.querySelector('.sQ').value).replace(',','.'))||0,unidade:'kg'})).filter(x=>x.material&&x.qtd>0);
 $$('.typeseg button').forEach(b=>b.addEventListener('click',()=>setTipo(b.dataset.tipo)));
 $('#fUn').addEventListener('change',()=>{const u=$('#fUn').value==='kg'?'kg':'peça';$('#lPreco').textContent=tipo==='estoque'?'Valor de custo por '+u+' (opcional)':'Preço por '+u+' (R$)';calcTotal();});
@@ -703,9 +711,24 @@ function procHint(ent,sai){const h=$('#fHint');h.textContent='';const qn=num('#f
   if(val&&ok){h.innerHTML='O que saiu vale uns <b>'+BRL(val)+'</b> nos seus preços de venda'+(e&&e.pc?' (o sujo custou <b>'+BRL(qn*e.pc)+'</b>)':'')+' → cada '+(un==='kg'?'kg':'peça')+' sujo rendeu <b>'+BRL(val/qn)+'</b>.';}}
 ['#fQtd','#fPreco','#fValor'].forEach(id=>$(id).addEventListener('input',calcTotal));
 $('#fMaterial').addEventListener('input',hint);
+const rendItens=()=>(cfg.rend&&cfg.rend.itens)||[];
+function rendPadrao(mat,un,qtd){const it=rendItens().find(x=>(x.material||'').trim().toLowerCase()===(mat||'').trim().toLowerCase());if(!it||!(+it.cobre>0)||!(qtd>0))return null;
+  const peso=+it.peso||0,cu=+it.cobre,fe=(it.ferro!==''&&it.ferro!=null&&!isNaN(+it.ferro))?+it.ferro:(peso?Math.max(0,peso-cu):0);
+  let n;if(un==='pç')n=qtd;else{if(!peso)return null;n=qtd/peso;}
+  const r2=v=>Math.round(v*100)/100,saidas=[{material:'Cobre',qtd:r2(n*cu),unidade:'kg'}];if(fe>0)saidas.push({material:'Ferro',qtd:r2(n*fe),unidade:'kg'});return {saidas,pecas:n};}
+function precoVendaKg(mat){const t=precoTabela(mat,'kg','venda');if(t)return +t;const o=msAll()[(mat||'').toLowerCase()+'|kg'];return o&&o.pv||0;}
+function rpRow(it){const d=document.createElement('div');d.className='rprow';it=it||{};
+  d.innerHTML='<input class="rm" list="dlMateriais" placeholder="Material comprado (ex.: Motor de geladeira grande)" value="'+esc(it.material||'')+'"><label class="lb">Peso da peça (kg)<input class="rp" type="number" step="any" inputmode="decimal" placeholder="kg" value="'+(it.peso||'')+'"></label><label class="lb">Cobre por peça (kg)<input class="rc" type="number" step="any" inputmode="decimal" placeholder="kg" value="'+(it.cobre||'')+'"></label><label class="lb">Ferro por peça (kg)<input class="rf" type="number" step="any" inputmode="decimal" placeholder="o resto" value="'+(it.ferro??'')+'"></label><button type="button" aria-label="Remover">✕</button>';
+  d.querySelector('button').addEventListener('click',()=>{d.remove();rpDirty=true;});d.querySelectorAll('input').forEach(i=>i.addEventListener('input',()=>{rpDirty=true;}));$('#rpRows').appendChild(d);return d;}
+let rpDirty=false;function renderRendPad(){if(rpDirty)return;$('#rpRows').innerHTML='';const it=rendItens();(it.length?it:[{}]).forEach(rpRow);}
+$('#rpAdd').addEventListener('click',()=>{rpRow({}).querySelector('.rm').focus();rpDirty=true;});
+$('#rpSave').addEventListener('click',async()=>{if(!cfgCol)return;const itens=$$('#rpRows .rprow').map(d=>({material:d.querySelector('.rm').value.trim(),peso:parseFloat(d.querySelector('.rp').value)||0,cobre:parseFloat(d.querySelector('.rc').value)||0,ferro:d.querySelector('.rf').value===''?'':(parseFloat(d.querySelector('.rf').value)||0)})).filter(x=>x.material&&x.cobre>0);
+  try{await cfgCol.doc('rend').set({itens,atualizado:ymd(today)});rpDirty=false;toast('Rendimentos salvos');}catch(e){toast('Não deu para salvar');}});
 function hint(){
   const h=$('#fHint'); h.textContent=''; if(tipo==='gasto')return;
-  const m=matStats()[($('#fMaterial').value.trim().toLowerCase())+'|'+$('#fUn').value]; const p=num('#fPreco');
+  if(tipo==='compra'){const rp=rendPadrao($('#fMaterial').value,$('#fUn').value,num('#fQtd'));if(rp){const t=num('#fQtd')*num('#fPreco');let val=0,ok=true;rp.saidas.forEach(x=>{const pv=precoVendaKg(x.material);if(pv)val+=x.qtd*pv;else ok=false;});
+    h.innerHTML='Vai render <b>'+rp.saidas.map(x=>N(x.qtd,2)+' kg de '+esc(x.material.toLowerCase())).join(' + ')+'</b>'+(val?' → vendendo vale <b>'+BRL(val)+'</b>'+(t?', lucro previsto <b class="'+(val-t>=0?'pos':'neg')+'">'+BRL(val-t)+'</b>':'')+(ok?'':' (falta preço de venda de algum material)'):'')+'. Já entra no estoque como cobre e ferro.';return;}}
+  const m=msAll()[($('#fMaterial').value.trim().toLowerCase())+'|'+$('#fUn').value]; const p=num('#fPreco');
   if(!m||!p)return;
   if(tipo==='compra'&&m.pv){const mg=(m.pv-p)/p*100;h.innerHTML='Você vende esse material a <b>'+BRL(m.pv)+'</b> em média → margem de <b class="'+(mg>=0?'pos':'neg')+'">'+N(mg,0)+'%</b> nessa compra.';}
   else if(tipo==='venda'&&m.pc){const mg=(p-m.pc)/m.pc*100;h.innerHTML='Você pagou <b>'+BRL(m.pc)+'</b> em média → margem de <b class="'+(mg>=0?'pos':'neg')+'">'+N(mg,0)+'%</b> nessa venda.';}
@@ -743,6 +766,9 @@ $('#form').addEventListener('submit',async e=>{
     if(fotoData)d.foto=true;
     const ref=ed?col.doc(ed._id):col.doc();ref.set(d).catch(err=>toast('Erro ao salvar: '+(err.code||'')));  // grava offline também
     if(fotoData&&fotosCol)fotosCol.doc(ref.id).set({img:fotoData,criadoEm:new Date().toISOString()}).catch(()=>toast('A foto não subiu (muito grande?)'));
+    if(tipo==='compra'){const lk=ed&&rows.find(r=>r.tipo==='processo'&&r.compraRef===ed._id);const rp=rendPadrao(d.material,d.unidade,d.qtd);
+      if(lk&&lk.auto){if(rp)col.doc(lk._id).set({tipo:'processo',auto:true,compraRef:ref.id,data:d.data,pessoa:d.pessoa||'',total:0,perda:null,entrada:{material:d.material,qtd:d.qtd,unidade:d.unidade},saidas:rp.saidas,obs:'Rendimento padrão (previsto). Edite com o peso real se quiser.',criadoEm:lk.criadoEm||d.criadoEm,editadoEm:new Date().toISOString()}).catch(()=>{});else col.doc(lk._id).delete().catch(()=>{});}
+      else if(!lk&&rp){const pd={tipo:'processo',auto:true,compraRef:ref.id,data:d.data,pessoa:d.pessoa||'',total:0,perda:null,entrada:{material:d.material,qtd:d.qtd,unidade:d.unidade},saidas:rp.saidas,obs:'Rendimento padrão (previsto). Edite com o peso real se quiser.',criadoEm:new Date(Date.parse(d.criadoEm)+1).toISOString()};if(d.por)pd.por=d.por;col.doc().set(pd).catch(()=>{});}}
     d._id=ref.id;if(ed){editing=null;$('#editBar').hidden=true;}
     try{navigator.vibrate&&navigator.vibrate(30);}catch(_){}
     if(tipo==='compra'||tipo==='venda')snackRecibo((tipo==='compra'?'Compra':'Venda')+' de '+BRL(d.total)+' salva',d);
@@ -756,14 +782,34 @@ $('#form').addEventListener('submit',async e=>{
 
 /* ---------- cálculos ---------- */
 const monthRows=(y,m)=>{const k=key(y,m);return rows.filter(r=>(r.data||'').slice(0,7)===k);};
-function sums(rs){const s={venda:0,compra:0,gasto:0,nv:0,nc:0,ng:0};rs.forEach(r=>{const t=+r.total||0;if(r.tipo==='venda'){s.venda+=t;s.nv++;}else if(r.tipo==='compra'){s.compra+=t;s.nc++;}else if(r.tipo==='gasto'||(r.tipo==='processo'&&t>0)){s.gasto+=t;s.ng++;}else if(r.tipo==='mov'&&r.sub==='emp_out'&&+r.juros>0){s.gasto+=+r.juros;s.ng++;}});s.lucro=s.venda-s.compra-s.gasto;return s;}
+let _msC=null,_msR=null;function msAll(){if(_msR!==rows||!_msC){_msC=matStats();_msR=rows;_cvC=null;custoMap();}return _msC;}
+// custo médio móvel: cada venda usa o custo do estoque daquele momento
+let _cvC=null,_cvR=null;
+function custoMap(){if(_cvR===rows&&_cvC)return _cvC;if(_msR!==rows||!_msC){_msC=matStats();_msR=rows;}const ms=_msC,st={},out={};
+  const K=(m,u)=>(m||'—').trim().toLowerCase()+'|'+(u||'kg'),S=k=>st[k]||(st[k]={q:0,v:0}),avg=o=>o.q>0?o.v/o.q:0;
+  const ord=rows.filter(r=>['compra','venda','estoque','processo'].includes(r.tipo)).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.criadoEm||'').localeCompare(b.criadoEm||''));
+  ord.forEach(r=>{if(r.tipo==='compra'){const o=S(K(r.material,r.unidade));o.q+=+r.qtd||0;o.v+=+r.total||0;}
+    else if(r.tipo==='estoque'){const o=S(K(r.material,r.unidade)),q=+r.qtd||0,a=avg(o);if(r.sub==='saida'){o.v-=Math.min(o.v,q*a);o.q=Math.max(0,o.q-q);}else{o.q+=q;o.v+=+r.preco>0?(+r.total||q*r.preco):q*a;}}
+    else if(r.tipo==='venda'){const o=S(K(r.material,r.unidade)),q=+r.qtd||0,a=avg(o);out[r._id]=a>0?q*a:null;if(a>0){o.v-=Math.min(o.v,q*a);}o.q=Math.max(0,o.q-q);}
+    else if(r.tipo==='processo'&&r.entrada){const e=S(K(r.entrada.material,r.entrada.unidade)),q=+r.entrada.qtd||0,a=avg(e),custo=q*a;e.v-=Math.min(e.v,custo);e.q=Math.max(0,e.q-q);
+      const outs=(r.saidas||[]).map(x=>({k:K(x.material,'kg'),q:+x.qtd||0}));let W=outs.reduce((t,x)=>t+x.q*((ms[x.k]&&ms[x.k].pv)||0),0);const bv=W>0;if(!bv)W=outs.reduce((t,x)=>t+x.q,0)||1;
+      outs.forEach(x=>{const o=S(x.k),w=bv?x.q*((ms[x.k]&&ms[x.k].pv)||0):x.q;o.q+=x.q;o.v+=custo*w/W;});}});
+  Object.entries(st).forEach(([k,o])=>{const m=ms[k];if(m&&o.q>0.001){m.pc=o.v/o.q;m.parado=m.est*m.pc;}});
+  _cvC=out;_cvR=rows;return out;}
+function custoVenda(r,ms){const m=custoMap();if(r._id&&r._id in m&&m[r._id]!=null)return m[r._id];
+  const k=(r.material||'—').trim().toLowerCase()+'|'+(r.unidade||'kg'),q=+r.qtd||0,o=ms[k];if(o&&o.pc)return q*o.pc;
+  const ult=rows.filter(x=>x.tipo==='compra'&&(x.material||'').trim().toLowerCase()+'|'+(x.unidade||'kg')===k&&+x.preco>0).sort(sortDesc)[0];return ult?q*(+ult.preco):null;}
+function sums(rs){const ms=msAll();const s={venda:0,compra:0,gasto:0,cmv:0,semCusto:0,semMat:{},nv:0,nc:0,ng:0};rs.forEach(r=>{const t=+r.total||0;
+  if(r.tipo==='venda'){s.venda+=t;s.nv++;const c=custoVenda(r,ms);if(c==null){s.cmv+=t;s.semCusto+=t;s.semMat[(r.material||'—').trim()]=1;}else s.cmv+=c;}
+  else if(r.tipo==='compra'){s.compra+=t;s.nc++;}else if(r.tipo==='gasto'||(r.tipo==='processo'&&t>0)){s.gasto+=t;s.ng++;}else if(r.tipo==='mov'&&r.sub==='emp_out'&&+r.juros>0){s.gasto+=+r.juros;s.ng++;}});
+  s.lucro=s.venda-s.cmv-s.gasto;return s;}
 function matStats(){const m={},rend={};
   const get=(name,un)=>{name=(name||'—').trim();const id=name.toLowerCase()+'|'+(un||'kg');return m[id]||(m[id]={name,un:un||'kg',cq:0,cv:0,vq:0,vv:0,inQ:0,inV:0,outQ:0,prodQ:0,semQ:0,ajQ:0});};
   rows.forEach(r=>{if(r.tipo==='compra'){const o=get(r.material,r.unidade);o.cq+=+r.qtd||0;o.cv+=+r.total||0;o.inQ+=+r.qtd||0;o.inV+=+r.total||0;}
     else if(r.tipo==='venda'){const o=get(r.material,r.unidade);o.vq+=+r.qtd||0;o.vv+=+r.total||0;}
     else if(r.tipo==='estoque'){const o=get(r.material,r.unidade),q=+r.qtd||0;if(r.sub==='saida'){o.outQ+=q;o.ajQ-=q;}else{o.ajQ+=q;if(+r.preco>0){o.inQ+=q;o.inV+=+r.total||q*r.preco;}else o.semQ+=q;}}});
   rows.filter(r=>r.tipo==='processo'&&r.entrada).sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.criadoEm||'').localeCompare(b.criadoEm||'')).forEach(r=>{
-    const eu=r.entrada.unidade||'kg',e=get(r.entrada.material,eu),q=+r.entrada.qtd||0,pesoE=eu==='kg'?q:(+r.entrada.peso||0),pcE=e.inQ?e.inV/e.inQ:0,custo=q*pcE+(+r.total||0);e.outQ+=q;
+    const eu=r.entrada.unidade||'kg',e=get(r.entrada.material,eu),q=+r.entrada.qtd||0,pesoE=eu==='kg'?q:(+r.entrada.peso||0),pcE=e.inQ?e.inV/e.inQ:0,custo=q*pcE;e.outQ+=q;
     const outs=(r.saidas||[]).map(x=>({o:get(x.material,'kg'),q:+x.qtd||0}));
     let W=outs.reduce((a,x)=>a+x.q*(x.o.vq?x.o.vv/x.o.vq:0),0);const byVal=W>0;if(!byVal)W=outs.reduce((a,x)=>a+x.q,0)||1;
     outs.forEach(x=>{const w=byVal?x.q*(x.o.vq?x.o.vv/x.o.vq:0):x.q;x.o.inQ+=x.q;x.o.inV+=custo*w/W;x.o.prodQ+=x.q;});
@@ -782,7 +828,7 @@ function lucroReal(rs,ms){ // vendas − custo médio do que foi vendido − gas
 function cumChart(rs){
   const dim=new Date(mY,mM+1,0).getDate(); const isCur=mY===today.getFullYear()&&mM===today.getMonth();
   const last=isCur?today.getDate():(new Date(mY,mM,1)>today?0:dim);
-  const daily=Array(dim).fill(0); rs.forEach(r=>{const d=+(r.data||'').slice(8,10);if(d>=1&&d<=dim){const t=+r.total||0;daily[d-1]+=r.tipo==='venda'?t:(r.tipo==='compra'||r.tipo==='gasto'||r.tipo==='processo')?-t:(r.tipo==='mov'&&r.sub==='emp_out')?-(+r.juros||0):0;}});
+  const daily=Array(dim).fill(0); rs.forEach(r=>{const d=+(r.data||'').slice(8,10);if(d>=1&&d<=dim){const t=+r.total||0;if(r.tipo==='venda'){const c=custoVenda(r,msAll());daily[d-1]+=t-(c==null?t:c);}else daily[d-1]+=(r.tipo==='gasto'||r.tipo==='processo')?-t:(r.tipo==='mov'&&r.sub==='emp_out')?-(+r.juros||0):0;}});
   const cum=[];let a=0;for(let i=0;i<dim;i++){a+=daily[i];cum.push(a);}
   const real=cum.slice(0,last); const rate=last?real[last-1]/last:0; const proj=[];
   if(isCur&&last){for(let i=last-1;i<dim;i++)proj.push([i,real[last-1]+rate*(i-(last-1))]);}
@@ -810,13 +856,13 @@ function cumChart(rs){
   return {isCur,last,dim,rate,projFim:isCur&&last?real[last-1]+rate*(dim-last):null};
 }
 function sixChart(){
-  const ms=[];for(let i=5;i>=0;i--){const d=new Date(mY,mM-i,1);const s=sums(monthRows(d.getFullYear(),d.getMonth()));ms.push({lbl:MESC[d.getMonth()],v:s.venda,c:s.compra+s.gasto,l:s.lucro});}
+  const ms=[];for(let i=5;i>=0;i--){const d=new Date(mY,mM-i,1);const s=sums(monthRows(d.getFullYear(),d.getMonth()));ms.push({lbl:MESC[d.getMonth()],v:s.venda,c:s.cmv+s.gasto,l:s.lucro});}
   const max=Math.max(1,...ms.map(m=>Math.max(m.v,m.c))),minL=Math.min(0,...ms.map(m=>m.l));
   const W=640,H=210,L=50,B=24,T=10; const top=max, bot=minL, span=top-bot||1; const y=v=>T+(H-T-B)*(1-(v-bot)/span); const cw=(W-L-6)/6;
   let g='';for(let k=0;k<=3;k++){const v=bot+span*k/3;g+=`<line x1="${L}" x2="${W-4}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="10.5" fill="var(--muted)" font-family="var(--f-num)">${BRLk(v).replace('R$ ','')}</text>`;}
   const lp=[];ms.forEach((m,i)=>{const x0=L+i*cw+cw*.18,bw=cw*.3;
     g+=`<rect x="${x0}" y="${y(m.v)}" width="${bw}" height="${Math.max(0,y(0)-y(m.v))}" rx="4" fill="var(--good)"><title>Vendas ${BRL(m.v)}</title></rect>`;
-    g+=`<rect x="${x0+bw+3}" y="${y(m.c)}" width="${bw}" height="${Math.max(0,y(0)-y(m.c))}" rx="4" fill="var(--buy)"><title>Compras+gastos ${BRL(m.c)}</title></rect>`;
+    g+=`<rect x="${x0+bw+3}" y="${y(m.c)}" width="${bw}" height="${Math.max(0,y(0)-y(m.c))}" rx="4" fill="var(--buy)"><title>Custo do vendido + gastos ${BRL(m.c)}</title></rect>`;
     g+=`<text x="${L+i*cw+cw/2}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--muted)">${m.lbl}</text>`;lp.push([L+i*cw+cw/2,y(m.l),m.l]);});
   g+=`<path d="${lp.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')}" fill="none" stroke="var(--blue)" stroke-width="2.5"/>`+lp.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="var(--blue)" stroke="var(--panel)" stroke-width="2"><title>Lucro ${BRL(p[2])}</title></circle>`).join('');
   $('#sixChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Vendas, custos e lucro dos últimos 6 meses">${g}</svg>`;
@@ -845,7 +891,7 @@ function animate(el,to){const from=animFrom;const t0=performance.now();const d=6
 
 function render(){
   $('#mLabel').textContent=MESC[mM]+' '+String(mY).slice(2);
-  const rs=monthRows(mY,mM), s=sums(rs), ms=matStats();
+  const rs=monthRows(mY,mM), s=sums(rs), ms=msAll();
   const pd=new Date(mY,mM-1,1), ps=sums(monthRows(pd.getFullYear(),pd.getMonth()));
   if(view==='inicio'){try{const sd=saldos();const tt=Object.values(sd).reduce((a,b)=>a+b,0);const pend=rows.filter(r=>r.pago===false);
       const ar=pend.filter(r=>r.tipo==='venda').reduce((a,r)=>a+(+r.total||0),0),ap=pend.filter(r=>r.tipo!=='venda').reduce((a,r)=>a+(+r.total||0),0);
@@ -855,7 +901,8 @@ function render(){
     const dl=$('#hDelta');
     if(ps.nv+ps.nc+ps.ng>0){const diff=s.lucro-ps.lucro;dl.className='pill '+(diff>=0?'up':'down');dl.textContent=(diff>=0?'▲ ':'▼ ')+BRLk(Math.abs(diff))+' vs '+MESC[pd.getMonth()];}else{dl.className='pill';dl.textContent='primeiro mês';}
     $('#hMargem').textContent=s.venda>0?'margem '+N(s.lucro/s.venda*100,0)+'%':'margem —';
-    const lr=lucroReal(rs,ms);$('#hReal').innerHTML=s.nv?'Lucro sobre o que vendeu (desconta só o custo do material vendido): <b class="num '+(lr.valor>=0?'pos':'neg')+'">'+BRL(lr.valor)+'</b>':'';
+    $('#hReal').innerHTML=(s.nv?'Faturamento '+BRL(s.venda)+' − custo do material vendido '+BRL(s.cmv)+' − gastos '+BRL(s.gasto)+'. Compra não diminui o lucro: vira estoque.':'Compra não diminui o lucro: vira estoque. O lucro aparece quando você vende.')
+      +(s.semCusto?'<br><b style="color:var(--warn)">Atenção:</b> '+BRL(s.semCusto)+' em vendas de <b>'+esc(Object.keys(s.semMat).join(', '))+'</b> sem custo conhecido. Contei como lucro zero. Lance o estoque com o preço que pagou em Materiais → Ajustar estoque.':'');
     $('#kV').textContent=BRL(s.venda);$('#kVn').textContent=s.nv+(s.nv===1?' venda':' vendas');
     $('#kC').textContent=BRL(s.compra);$('#kCn').textContent=s.nc+(s.nc===1?' compra':' compras');
     $('#kG').textContent=BRL(s.gasto);$('#kGn').textContent=s.ng+(s.ng===1?' gasto':' gastos');
@@ -867,7 +914,7 @@ function render(){
     insights(rs,s,ps,ms,pr);
     listInto($('#recent'),rs.slice().sort(sortDesc).slice(0,5),false);
   }
-  if(view==='materiais')renderMat(rs,ms);
+  if(view==='materiais'){renderMat(rs,ms);renderRendPad();}
   if(view==='relatorios'){sixChart();donut(rs);renderPeople(rs);renderAll();}
   if(view==='caixa')renderCaixa();if(view==='pessoas')renderPessoas();if(view==='precos'&&!precosDirty)renderPrecos();if(view==='equipe')renderEquipe();if(view==='staff')renderStaff();
   renderLists(ms);
@@ -916,7 +963,7 @@ const recClick=e=>{let b=e.target.closest('[data-rec]');if(b){const r=rows.find(
 ['#recent','#staffList','#arList','#apList','#pList','#mvList'].forEach(id=>$(id).addEventListener('click',e=>{recClick(e);delClick(e);}));
 async function delClick(e){const b=e.target.closest('.del[data-id]');if(!b||!col||!isOwner)return;
   if(!b.classList.contains('confirm')){b.classList.add('confirm');b.textContent='Confirmar';setTimeout(()=>{if(b.isConnected){b.classList.remove('confirm');b.textContent='Apagar';}},4000);return;}
-  b.disabled=true;col.doc(b.dataset.id).delete().catch(()=>toast('Não deu para apagar'));if(fotosCol)fotosCol.doc(b.dataset.id).delete().catch(()=>{});toast('Lançamento apagado');}
+  b.disabled=true;col.doc(b.dataset.id).delete().catch(()=>toast('Não deu para apagar'));rows.filter(r=>r.tipo==='processo'&&r.auto&&r.compraRef===b.dataset.id).forEach(r=>col.doc(r._id).delete().catch(()=>{}));if(fotosCol)fotosCol.doc(b.dataset.id).delete().catch(()=>{});toast('Lançamento apagado');}
 $('#allList').addEventListener('click',e=>{if(recClick(e))return;delClick(e);});
 
 function renderRend(ms){const list=Object.keys(ms._rend).map(k=>rendOf(ms,k)).filter(Boolean).sort((a,b)=>b.in-a.in);
@@ -940,7 +987,7 @@ function renderMat(rs,ms){renderRend(ms);
   calc();
 }
 function calc(){
-  const ms=matStats();const name=$('#cMat').value.trim().toLowerCase();const o=Object.values(ms).find(x=>x.name.toLowerCase()===name);
+  const ms=msAll();const name=$('#cMat').value.trim().toLowerCase();const o=Object.values(ms).find(x=>x.name.toLowerCase()===name);
   const R=rendOf(ms,$('#cMat').value);
   if(!$('#cVenda').value){if(o&&o.pv)$('#cVenda').value=o.pv.toFixed(2);else if(R&&R.valKg)$('#cVenda').value=R.valKg.toFixed(2);}
   const pv=num('#cVenda'),mg=num('#cMargem'),q=num('#cQtd'),of=num('#cOferta');
@@ -1082,20 +1129,20 @@ $('#repCsv').addEventListener('click',()=>{const n=v=>(+v||0).toFixed(2).replace
   repRows().forEach(r=>{if(r.tipo==='processo'){L.push([r.data,'Limpeza',r.pessoa,r.entrada.material+' → '+(r.saidas||[]).map(x=>x.material+' '+x.qtd+'kg').join(', '),r.entrada.qtd,r.entrada.unidade,'',n(r.total),'','',r.obs].map(q).join(';'));return;}
     if(r.tipo==='mov'){L.push([r.data,{emp_in:'Empréstimo recebido',emp_out:'Pagamento de empréstimo',aporte:'Aporte',retirada:'Retirada'}[r.sub],r.obs,'','','','',n(r.valor),r.forma,r.juros?'juros '+n(r.juros):'',''].map(q).join(';'));return;}
     L.push([r.data,tipoNome[r.tipo],r.pessoa,r.material||r.categoria,r.qtd!=null?String(r.qtd).replace('.',','):'',r.unidade||'',r.preco!=null?n(r.preco):'',n(r.total),r.forma||'',r.pago===false?'Fiado':'Pago',r.obs].map(q).join(';'));});
-  const s=sums(repRows());L.push('');L.push([q('Vendas'),q(n(s.venda))].join(';'));L.push([q('Compras'),q(n(s.compra))].join(';'));L.push([q('Gastos'),q(n(s.gasto))].join(';'));L.push([q('Resultado'),q(n(s.lucro))].join(';'));
+  const s=sums(repRows());L.push('');L.push([q('Faturamento (vendas)'),q(n(s.venda))].join(';'));L.push([q('Custo do material vendido'),q(n(s.cmv))].join(';'));L.push([q('Gastos'),q(n(s.gasto))].join(';'));L.push([q('Lucro'),q(n(s.lucro))].join(';'));L.push([q('Compras do mês (foram para o estoque)'),q(n(s.compra))].join(';'));
   const blob=new Blob(['﻿'+L.join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`HS-Recicla-${key(mY,mM)}.csv`;document.body.appendChild(a);a.click();a.remove();toast('Planilha baixada');});
 $('#repPdf').addEventListener('click',()=>{const rs=repRows(),s=sums(rs);const P=$('#paper');P.className='paper a4';
   const grp=t=>rs.filter(r=>r.tipo===t);const tb=(t,cols,fn)=>{const l=grp(t);return l.length?`<h3 style="margin:14px 0 4px;font-family:inherit">${tipoNome[t]}s (${l.length})</h3><table><thead><tr>${cols.map(c=>`<th${c[1]?' class="r"':''}>${c[0]}</th>`).join('')}</tr></thead><tbody>${l.map(fn).join('')}</tbody></table>`:'';};
   const dt=d=>(d||'').split('-').reverse().join('/');const m=v=>(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   P.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>HS RECICLA COMÉRCIO DE SUCATAS LTDA</b><br>CNPJ 66.233.137/0001-02</div><img src="logo-print.png" alt="" style="width:120px;filter:grayscale(1) contrast(1.6)"></div>
   <div class="hr"></div><b style="font-size:16px">Relatório de ${MES[mM]} de ${mY}</b>
-  <table style="margin-top:8px"><tr><td>Vendas</td><td class="r">R$ ${m(s.venda)}</td></tr><tr><td>Compras de material</td><td class="r">R$ ${m(s.compra)}</td></tr><tr><td>Gastos (inclui juros e limpeza)</td><td class="r">R$ ${m(s.gasto)}</td></tr><tr><td><b>Resultado</b></td><td class="r"><b>R$ ${m(s.lucro)}</b></td></tr></table>
+  <table style="margin-top:8px"><tr><td>Faturamento (vendas)</td><td class="r">R$ ${m(s.venda)}</td></tr><tr><td>(−) Custo do material vendido</td><td class="r">R$ ${m(s.cmv)}</td></tr><tr><td>(−) Gastos (inclui juros e limpeza)</td><td class="r">R$ ${m(s.gasto)}</td></tr><tr><td><b>Lucro</b></td><td class="r"><b>R$ ${m(s.lucro)}</b></td></tr><tr><td class="muted">Compras do mês (foram para o estoque)</td><td class="r muted">R$ ${m(s.compra)}</td></tr></table>
   ${tb('venda',[['Data'],['Cliente'],['Material'],['Qtd',1],['Total',1]],r=>`<tr><td>${dt(r.data)}</td><td>${esc(r.pessoa||'')}</td><td>${esc(r.material)}</td><td class="r">${N(r.qtd,2)} ${esc(r.unidade||'kg')}</td><td class="r">${m(r.total)}${r.pago===false?' (fiado)':''}</td></tr>`)}
   ${tb('compra',[['Data'],['Fornecedor'],['Material'],['Qtd',1],['Total',1]],r=>`<tr><td>${dt(r.data)}</td><td>${esc(r.pessoa||'')}</td><td>${esc(r.material)}</td><td class="r">${N(r.qtd,2)} ${esc(r.unidade||'kg')}</td><td class="r">${m(r.total)}${r.pago===false?' (fiado)':''}</td></tr>`)}
   ${tb('gasto',[['Data'],['Categoria'],['Pago a'],['Total',1]],r=>`<tr><td>${dt(r.data)}</td><td>${esc(r.categoria)}</td><td>${esc(r.pessoa||'')}</td><td class="r">${m(r.total)}</td></tr>`)}
   ${tb('processo',[['Data'],['Entrou'],['Saiu'],['Custo',1]],r=>`<tr><td>${dt(r.data)}</td><td>${esc(r.entrada.material)} ${N(r.entrada.qtd)} ${r.entrada.unidade==='pç'?'pç':'kg'}</td><td>${(r.saidas||[]).map(x=>esc(x.material)+' '+N(x.qtd)+'kg').join(', ')}</td><td class="r">${m(r.total)}</td></tr>`)}
   <div class="hr"></div><div class="c" style="font-size:11px">Gerado pelo app Caixa HS Recicla em ${new Date().toLocaleDateString('pt-BR')} · relatório gerencial, sem valor fiscal</div>`;
-  recText=`Relatório HS Recicla ${MES[mM]}/${mY}: vendas ${BRL(s.venda)}, compras ${BRL(s.compra)}, gastos ${BRL(s.gasto)}, resultado ${BRL(s.lucro)}`;$('#recibo').hidden=false;});
+  recText=`Relatório HS Recicla ${MES[mM]}/${mY}: faturamento ${BRL(s.venda)}, custo do material vendido ${BRL(s.cmv)}, gastos ${BRL(s.gasto)}, lucro ${BRL(s.lucro)}, compras para o estoque ${BRL(s.compra)}`;$('#recibo').hidden=false;});
 
 $('#btnBackup').addEventListener('click',()=>{const data={app:'Caixa HS Recicla',geradoEm:new Date().toISOString(),lancamentos:rows.map(r=>Object.assign({},r)),config:cfg};
   const blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-hs-recicla-'+ymd(today)+'.json';document.body.appendChild(a);a.click();a.remove();toast('Backup baixado: '+rows.length+' lançamentos');});
