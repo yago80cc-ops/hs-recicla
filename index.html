@@ -45,6 +45,11 @@ body.privado .wrap .big,body.privado .wrap .kpi .v,body.privado .wrap .num,body.
 .saldos span{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px}
 .saldos b{font-family:var(--f-num)}
 .btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-top:3px}
+.pixcard{border-color:var(--copper)}
+.pixcard .pxv{font-family:var(--f-num);font-size:26px;font-weight:700}
+.pixcard .pxacts{display:flex;flex-wrap:wrap;gap:8px}
+.pixcard .pxacts button{flex:1 1 30%;font-weight:700;padding:12px 8px}
+.pixcard .pxacts .ign{flex:1 1 100%;background:none;color:var(--muted)}
 .pchip{font-size:11px;font-weight:700;border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:1px}
 .pchip.fiado{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
 .pchip.venc{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}
@@ -325,6 +330,13 @@ nav.tabs .fab svg{width:28px;height:28px}
 
   <!-- INÍCIO -->
   <section class="view" id="v-inicio">
+    <div class="card pixcard owner-only" id="pixCard" hidden>
+      <div class="row"><span class="small muted" id="pxTit">Pix na conta</span><span class="small muted" id="pxCount"></span></div>
+      <div><span class="pxv" id="pxVal"></span> <span class="muted" id="pxNome"></span></div>
+      <div class="small muted" id="pxTxt"></div>
+      <b>O que foi isso?</b>
+      <div class="pxacts" id="pxActs"></div>
+    </div>
     <button type="button" class="card cxcard" id="cxHome" data-go="caixa" style="text-align:left;cursor:pointer">
       <div class="row"><span class="lbl" style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700">Dinheiro no caixa agora</span><span class="link small">ver caixa ›</span></div>
       <span class="big num" id="cxHomeTot" style="font-family:var(--f-num);font-size:clamp(26px,7vw,38px);font-weight:700">R$ 0,00</span>
@@ -674,7 +686,7 @@ function openSheet(r){ editing=null;$('#editBar').hidden=true;
     $('#btnSalvar').textContent='Salvar alteração';calcTotal();}
   else{$('#fData').value=ymd(today);setTipo(tipo);}
   $('#sheet').classList.add('open');$('#sheetBg').classList.add('open');$('#formMsg').textContent='';if(!editing)renderChips(); }
-function closeSheet(){ $('#sheet').classList.remove('open');$('#sheetBg').classList.remove('open');if(editing){editing=null;resetForm();$('#editBar').hidden=true;setTipo(tipo);} }
+function closeSheet(){ pixAtual=null;pixAlvo=0; $('#sheet').classList.remove('open');$('#sheetBg').classList.remove('open');if(editing){editing=null;resetForm();$('#editBar').hidden=true;setTipo(tipo);} }
 $('#fab').addEventListener('click',()=>openSheet());$('#editCancel').addEventListener('click',closeSheet);
 $('#fPago').addEventListener('change',()=>{$('#boxVenc').hidden=$('#fPago').value==='1';}); $('#sheetBg').addEventListener('click',closeSheet);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();});
@@ -710,6 +722,8 @@ function procHint(ent,sai){const h=$('#fHint');h.textContent='';const qn=num('#f
   const e=ms[$('#fEnt').value.trim().toLowerCase()+'|'+un];
   if(val&&ok){h.innerHTML='O que saiu vale uns <b>'+BRL(val)+'</b> nos seus preços de venda'+(e&&e.pc?' (o sujo custou <b>'+BRL(qn*e.pc)+'</b>)':'')+' → cada '+(un==='kg'?'kg':'peça')+' sujo rendeu <b>'+BRL(val/qn)+'</b>.';}}
 ['#fQtd','#fPreco','#fValor'].forEach(id=>$(id).addEventListener('input',calcTotal));
+$('#fPreco').addEventListener('input',()=>{pixAlvo=0;});
+$('#fQtd').addEventListener('input',()=>{if(pixAlvo>0&&(tipo==='compra'||tipo==='venda')){const q=num('#fQtd');if(q>0){$('#fPreco').value=Math.round(pixAlvo/q*100)/100;calcTotal();}}});
 $('#fMaterial').addEventListener('input',hint);
 const rendItens=()=>(cfg.rend&&cfg.rend.itens)||[];
 function rendPadrao(mat,un,qtd){const it=rendItens().find(x=>(x.material||'').trim().toLowerCase()===(mat||'').trim().toLowerCase());if(!it||!(+it.cobre>0)||!(qtd>0))return null;
@@ -774,7 +788,7 @@ $('#form').addEventListener('submit',async e=>{
     if(tipo==='compra'||tipo==='venda')snackRecibo((tipo==='compra'?'Compra':'Venda')+' de '+BRL(d.total)+' salva',d);
     else if(tipo==='estoque')toast((d.sub==='saida'?'Retirado do estoque: ':'Colocado no estoque: ')+N(d.qtd)+' '+d.unidade+' de '+d.material);
     else toast(tipo==='processo'?(d.perda!=null?'Limpeza salva: perda de '+N(d.perda)+' kg':'Limpeza salva'):(tipo==='compra'?'Compra':tipo==='venda'?'Venda':'Gasto')+' de '+BRL(d.total)+' salva');
-    ['#fQtd','#fPreco','#fValor','#fObs','#fEntQ','#fCusto','#fEntPeso'].forEach(i=>$(i).value='');$('#fFoto').value='';fotoData=null;$('#fFotoPrev').hidden=true;$('#fPago').value='1';$('#boxVenc').hidden=true;$$('#saidas .sQ').forEach(x=>x.value='');calcTotal();closeSheet();
+    ['#fQtd','#fPreco','#fValor','#fObs','#fEntQ','#fCusto','#fEntPeso'].forEach(i=>$(i).value='');$('#fFoto').value='';fotoData=null;$('#fFotoPrev').hidden=true;$('#fPago').value='1';$('#boxVenc').hidden=true;$$('#saidas .sQ').forEach(x=>x.value='');calcTotal();pixFeito();closeSheet();
     const [y,m]=d.data.split('-').map(Number); if(y!==mY||m-1!==mM){mY=y;mM=m-1;}
   }catch(err){msg.className='status err';msg.textContent='Não deu para salvar ('+(err.code||'erro')+').';}
   finally{btn.disabled=false;}
@@ -891,6 +905,7 @@ function animate(el,to){const from=animFrom;const t0=performance.now();const d=6
   if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=BRL(to);}else animate._r=requestAnimationFrame(step);animFrom=to;}
 
 function render(){
+  renderPix();
   $('#mLabel').textContent=MESC[mM]+' '+String(mY).slice(2);
   const rs=monthRows(mY,mM), s=sums(rs), ms=msAll();
   const pd=new Date(mY,mM-1,1), ps=sums(monthRows(pd.getFullYear(),pd.getMonth()));
@@ -1055,7 +1070,7 @@ $('#mvSave').addEventListener('click',async()=>{if(!col)return;const v=num('#mvV
   const d={tipo:'mov',sub:$('#mvTipo').value,valor:v,forma:$('#mvForma').value,data:$('#mvData').value||ymd(today),obs:$('#mvObs').value.trim(),criadoEm:new Date().toISOString()};
   if(d.sub==='emp_out'&&num('#mvJuros')>0)d.juros=num('#mvJuros');
   if(d.sub==='emp_in'){d.aberto=true;if($('#mvVenc').value)d.venc=$('#mvVenc').value;const dv=num('#mvDevolver');d.devolver=dv>0?dv:v;if(!d.obs){toast('Coloque com quem pegou o empréstimo');return;}}
-  col.doc().set(d).catch(()=>toast('Erro ao salvar'));['#mvValor','#mvJuros','#mvObs','#mvDevolver','#mvVenc'].forEach(i=>$(i).value='');toast(d.sub==='emp_in'?'Empréstimo salvo'+(d.venc?' · pagar até '+d.venc.split('-').reverse().join('/'):''):'Movimento salvo');});
+  col.doc().set(d).catch(()=>toast('Erro ao salvar'));pixFeito();['#mvValor','#mvJuros','#mvObs','#mvDevolver','#mvVenc'].forEach(i=>$(i).value='');toast(d.sub==='emp_in'?'Empréstimo salvo'+(d.venc?' · pagar até '+d.venc.split('-').reverse().join('/'):''):'Movimento salvo');});
 const diasAte=v=>Math.round((new Date(v+'T12:00:00')-new Date(ymd(today)+'T12:00:00'))/864e5);
 const empAbertos=()=>rows.filter(r=>r.tipo==='mov'&&r.sub==='emp_in'&&r.aberto===true).sort((a,b)=>(a.venc||'9999').localeCompare(b.venc||'9999'));
 const vencChip=r=>{if(!r.venc)return '';const d=diasAte(r.venc);return d<0?`<span class="pchip venc">vencido há ${-d} dia${d===-1?'':'s'}</span>`:d===0?'<span class="pchip venc">vence hoje</span>':d<=7?`<span class="pchip fiado">vence em ${d} dia${d===1?'':'s'}</span>`:'';};
@@ -1149,6 +1164,47 @@ $('#repPdf').addEventListener('click',()=>{const rs=repRows(),s=sums(rs);const P
 $('#btnBackup').addEventListener('click',()=>{const data={app:'Caixa HS Recicla',geradoEm:new Date().toISOString(),lancamentos:rows.map(r=>Object.assign({},r)),config:cfg};
   const blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-hs-recicla-'+ymd(today)+'.json';document.body.appendChild(a);a.click();a.remove();toast('Backup baixado: '+rows.length+' lançamentos');});
 $('#btnEstAdd').addEventListener('click',()=>{setTipo('estoque');openSheet();});
+/* ---------- Pix do banco (aviso do celular) ---------- */
+let pixAtual=null,pixAlvo=0;
+const pixNum=v=>{v=String(v||'').replace(/[^\d.,]/g,'');if(/,\d{1,2}$/.test(v))v=v.replace(/\./g,'').replace(',','.');else v=v.replace(/,/g,'');return Math.round((parseFloat(v)||0)*100)/100;};
+function pixParse(txt,o){o=o||{};const t=String(txt||'').replace(/\s+/g,' ').trim();const r={txt:t.slice(0,200)};
+  const mv=t.match(/R\$\s*([\d.]+(?:,\d{1,2})?)/i);r.valor=o.valor?pixNum(o.valor):mv?pixNum(mv[1]):0;
+  const d=(o.dir||'').toLowerCase();r.dir=d==='in'||d==='entrou'?'in':d==='out'||d==='saiu'?'out':/receb|recebeu|caiu|entrou|depósito|deposito/i.test(t)?'in':/envi|pag|transfer|saiu|débito|debito|compra/i.test(t)?'out':'?';
+  let nome=o.nome||'';if(!nome){const m=t.match(/R\$\s*[\d.,]+\s+(?:de|para|a)\s+([^.!\d]{2,60})/i)||t.match(/(?:de|para)\s+([A-ZÀ-Ú][^.!\d]{1,60}?)\s+(?:no valor|de R\$|R\$)/);if(m)nome=m[1];}
+  r.nome=nome.replace(/\s+(via|pelo|pela|no|na)\s+.*$/i,'').trim().slice(0,60);return r;}
+function pixLerUrl(){let raw=null,o={};
+  try{const h=location.hash||'';const i=h.indexOf('pix=');if(i>=0){raw=h.slice(i+4);try{raw=decodeURIComponent(raw.replace(/\+/g,' '));}catch(_){} }
+    const q=new URLSearchParams(location.search);if(q.has('pix')||q.has('valor')){raw=raw||q.get('pix')||'';o={valor:q.get('valor'),nome:q.get('nome'),dir:q.get('dir')};}}catch(_){}
+  if(raw===null)return;const it=pixParse(raw,o);
+  try{history.replaceState(null,'',location.pathname);}catch(_){}
+  if(!(it.valor>0)){toast('Aviso de Pix sem valor: não deu para ler');return;}
+  const now=new Date();it.data=ymd(now);it.hora=now.toTimeString().slice(0,5);it.id=it.dir+'|'+it.valor+'|'+it.nome.toLowerCase()+'|'+it.data+' '+it.hora;
+  let loc=[];try{loc=JSON.parse(localStorage.getItem('pixLocal')||'[]');}catch(_){}
+  if(!loc.some(x=>x.id===it.id))loc.push(it);try{localStorage.setItem('pixLocal',JSON.stringify(loc));}catch(_){}
+  pixSubir();}
+function pixFila(){return ((cfg.pixFila||{}).itens||[]).slice().sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora));}
+function pixSubir(){if(!cfgCol||!isOwner)return;let loc=[];try{loc=JSON.parse(localStorage.getItem('pixLocal')||'[]');}catch(_){}
+  if(!loc.length){renderPix();return;}const ja=new Set(pixFila().map(x=>x.id));const novos=loc.filter(x=>!ja.has(x.id));
+  try{localStorage.removeItem('pixLocal');}catch(_){}
+  if(novos.length)cfgCol.doc('pixFila').set({itens:firebase.firestore.FieldValue.arrayUnion(...novos)},{merge:true}).catch(()=>{try{localStorage.setItem('pixLocal',JSON.stringify(loc));}catch(_){}toast('O Pix não subiu. Tento de novo quando abrir.');});
+  go('inicio');}
+function pixTirar(id){const it=pixFila().filter(x=>x.id!==id);cfg.pixFila={itens:it};renderPix();if(cfgCol)cfgCol.doc('pixFila').set({itens:it}).catch(()=>toast('Não deu para atualizar a fila'));}
+function pixFeito(){if(pixAtual){pixTirar(pixAtual.id);pixAtual=null;}pixAlvo=0;}
+function renderPix(){const c=$('#pixCard');if(!c)return;const f=isOwner?pixFila():[];if(!f.length){c.hidden=true;return;}const p=f[0];c.hidden=false;
+  $('#pxTit').textContent=(p.dir==='in'?'Entrou na conta':p.dir==='out'?'Saiu da conta':'Pix na conta')+' · '+p.data.split('-').reverse().slice(0,2).join('/')+' '+(p.hora||'');
+  $('#pxCount').textContent=f.length>1?(f.length-1)+' na fila':'';$('#pxVal').textContent=BRL(p.valor);$('#pxVal').style.color=p.dir==='in'?'var(--good)':p.dir==='out'?'var(--bad)':'';
+  $('#pxNome').textContent=p.nome?(p.dir==='in'?'de ':p.dir==='out'?'para ':'')+p.nome:'';$('#pxTxt').textContent=p.txt||'';
+  const ops=p.dir==='in'?[['venda','Venda'],['mov_in','Empréstimo / outro'],['ign','Ignorar (não é da HS)']]:p.dir==='out'?[['compra','Compra'],['gasto','Gasto'],['pro','Pró-labore'],['mov_out','Empréstimo / outro'],['ign','Ignorar (não é da HS)']]:[['venda','Venda'],['compra','Compra'],['gasto','Gasto'],['pro','Pró-labore'],['mov_in','Entrou outro'],['mov_out','Saiu outro'],['ign','Ignorar']];
+  $('#pxActs').innerHTML=ops.map(o=>`<button type="button" data-px="${o[0]}" class="${o[0]==='ign'?'ign':''}">${o[1]}</button>`).join('');}
+$('#pxActs').addEventListener('click',e=>{const b=e.target.closest('[data-px]');if(!b)return;const p=pixFila()[0];if(!p)return;const a=b.dataset.px;
+  if(a==='ign'){pixTirar(p.id);toast('Pix ignorado');return;}
+  if(a==='mov_in'||a==='mov_out'){go('caixa');pixAtual=p;$('#mvTipo').value=a==='mov_in'?'aporte':'retirada';$('#mvTipo').dispatchEvent(new Event('change'));$('#mvValor').value=p.valor;$('#mvForma').value='Banco/PIX';$('#mvData').value=p.data;$('#mvObs').value=p.nome||'';setTimeout(()=>{$('#mvTipo').scrollIntoView({behavior:'smooth',block:'center'});},60);toast('Confira o tipo e toque em Salvar movimento');return;}
+  const t=a==='pro'?'gasto':a;closeSheet();resetForm();setTipo(t);openSheet();pixAtual=p;
+  $('#fData').value=p.data;$('#fForma').value='Banco/PIX';$('#fPago').value='1';$('#boxVenc').hidden=true;$('#fObs').value='Pix '+BRL(p.valor)+(p.nome?' · '+p.nome:'');
+  if(t==='gasto'){$('#fValor').value=p.valor;$('#fPessoa').value=a==='pro'?'Yago':(p.nome||'');if(a==='pro')$('#fCat').value='Retirada / pró-labore';calcTotal();}
+  else{$('#fPessoa').value=p.nome||'';pixAlvo=p.valor;calcTotal();$('#fHint').textContent='Pix de '+BRL(p.valor)+': escolha o material e coloque a quantidade, que o preço sai sozinho.';}});
+window.addEventListener('hashchange',pixLerUrl);
+
 setTipo('compra'); go('inicio');
 
 /* ---------- Firebase ---------- */
@@ -1211,7 +1267,7 @@ auth.onAuthStateChanged(async u=>{clearTimeout(bootT);$('#boot').hidden=true;
     if(!auth.currentUser.emailVerified){$('#login').hidden=false;lm.className='status err';lm.textContent='Confirme seu e-mail pelo link que enviamos e entre de novo.';await auth.signOut();return;}}
   $('#login').hidden=true;$('#btnSair').hidden=false;$('#contaTxt').textContent='Conectado como '+(u.email||'');
   isOwner=(u.email||'').toLowerCase()===DONO;document.body.classList.toggle('staff',!isOwner);
-  col=fs.collection('lancamentos');cfgCol=fs.collection('config');cfgRef=cfgCol.doc('geral');fotosCol=fs.collection('fotos');go(isOwner?'inicio':'staff');
+  col=fs.collection('lancamentos');cfgCol=fs.collection('config');cfgRef=cfgCol.doc('geral');fotosCol=fs.collection('fotos');go(isOwner?'inicio':'staff');pixLerUrl();setTimeout(pixSubir,1500);
   st.textContent='Carregando…';st.className='status';
   const timer=setTimeout(()=>{st.textContent='Sem conexão: mostrando o que já estava salvo no celular. O que você lançar sobe quando a internet voltar.';st.className='status err';},10000);
   unsub.push(col.onSnapshot({includeMetadataChanges:true},snap=>{rows=snap.docs.map(d=>Object.assign({_id:d.id},d.data()));
